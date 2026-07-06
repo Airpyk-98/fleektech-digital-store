@@ -215,11 +215,11 @@ export default function Home() {
                   onClick={() => setSelectedProduct(product)}
                   className="bg-white border border-[#c6c5d5] rounded-xl overflow-hidden flex flex-col group hover:shadow-xl transition-all cursor-pointer"
                 >
-                  <div className="relative aspect-square bg-[#fcf9f8] p-4">
+                  <div className="relative w-full aspect-square bg-[#fcf9f8] overflow-hidden">
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="object-contain w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-500"
+                      className="absolute inset-0 w-full h-full object-cover object-center mix-blend-multiply group-hover:scale-110 transition-transform duration-500"
                     />
                     {product.badge && (
                       <div className="absolute top-2 left-2 bg-[#D32F2F] text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow">
@@ -383,11 +383,11 @@ export default function Home() {
                       favorite
                     </span>
                   </button>
-                  <div className="aspect-square bg-[#fcf9f8] flex items-center justify-center p-4">
+                  <div className="relative w-full aspect-square bg-[#fcf9f8] overflow-hidden">
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500"
+                      className="absolute inset-0 w-full h-full object-cover object-center mix-blend-multiply group-hover:scale-110 transition-transform duration-500"
                     />
                   </div>
                   <div className="p-3.5 flex flex-col flex-grow justify-between">
@@ -502,11 +502,11 @@ export default function Home() {
             </button>
 
             {/* Product Image */}
-            <div className="md:w-1/2 bg-white p-8 flex items-center justify-center border-b md:border-b-0 md:border-r border-[#c6c5d5] relative min-h-[300px]">
+            <div className="md:w-1/2 bg-white relative aspect-square overflow-hidden flex items-center justify-center border-b md:border-b-0 md:border-r border-[#c6c5d5]">
               <img
                 src={selectedProduct.image}
                 alt={selectedProduct.name}
-                className="w-full h-auto max-h-[350px] object-contain mix-blend-multiply"
+                className="absolute inset-0 w-full h-full object-cover object-center mix-blend-multiply"
               />
               {selectedProduct.badge && (
                 <div className="absolute top-4 left-4 bg-[#ffa504] text-[#684100] font-bold px-3 py-1 rounded-md text-xs shadow">

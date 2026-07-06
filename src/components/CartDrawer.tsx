@@ -81,8 +81,8 @@ export default function CartDrawer() {
                     key={item.id} 
                     className="flex gap-4 p-3 rounded-xl bg-white border border-[#c6c5d5] hover:shadow-md transition-shadow"
                   >
-                    <div className="w-20 h-20 bg-[#f0edec] rounded-lg p-2 flex items-center justify-center flex-shrink-0">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-contain mix-blend-multiply" />
+                    <div className="w-20 h-20 bg-[#f0edec] rounded-lg flex-shrink-0 relative overflow-hidden">
+                      <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover object-center mix-blend-multiply" />
                     </div>
                     
                     <div className="flex-1 flex flex-col justify-between">

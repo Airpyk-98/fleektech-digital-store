@@ -329,8 +329,8 @@ export default function AdminPage() {
                       className={`hover:bg-[#f6f3f2] transition-colors ${!product.isListed ? 'opacity-60 bg-[#ebe7e7]/40' : ''}`}
                     >
                       <td className="p-4 flex items-center gap-3.5 min-w-[240px]">
-                        <div className="w-12 h-12 rounded-lg bg-[#f0edec] p-1.5 flex items-center justify-center flex-shrink-0">
-                          <img src={product.image} alt={product.name} className="w-full h-full object-contain mix-blend-multiply" />
+                        <div className="w-12 h-12 rounded-lg bg-[#f0edec] flex-shrink-0 relative overflow-hidden">
+                          <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover object-center mix-blend-multiply" />
                         </div>
                         <div>
                           <span className="font-body font-bold text-[#00003c] block line-clamp-1">{product.name}</span>
