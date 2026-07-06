@@ -8,12 +8,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Name, email, and password are required' }, { status: 400 });
     }
 
-    const existing = await getUserByEmail(email);
+    const cleanName = name.trim();
+    const cleanEmail = email.trim();
+    const cleanPass = password.trim();
+
+    const existing = await getUserByEmail(cleanEmail);
     if (existing) {
       return NextResponse.json({ success: false, error: 'An account with this email already exists' }, { status: 409 });
     }
 
-    const newUser = await createUser({ name, email, password, role: 'user' });
+    const newUser = await createUser({ name: cleanName, email: cleanEmail, password: cleanPass, role: 'user' });
     const { password: _, ...userWithoutPass } = newUser;
     return NextResponse.json({ success: true, user: userWithoutPass });
   } catch (err: any) {

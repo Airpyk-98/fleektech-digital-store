@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Product } from '@/lib/db';
@@ -290,7 +291,7 @@ export default function AdminPage() {
             <div className="p-3 bg-[#ffa504]/10 border border-[#ffa504] rounded-xl mb-6 text-left">
               <p className="text-[11px] font-bold text-[#684100] uppercase mb-0.5">Demo Admin Credentials:</p>
               <p className="text-xs font-mono text-[#00003c]">Email: <b>admin@fleektech.com</b></p>
-              <p className="text-xs font-mono text-[#00003c]">Password: <b>admin123</b></p>
+              <p className="text-xs font-mono text-[#00003c]">Password: <b>NwachukwuJacklyn</b> (or admin123)</p>
             </div>
 
             {adminError && (
@@ -390,6 +391,13 @@ export default function AdminPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/"
+              className="px-4 py-2.5 rounded-xl border border-[#ffa504] bg-[#ffb95c]/20 hover:bg-[#ffb95c]/30 text-[#684100] font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[18px]">visibility</span>
+              Preview Storefront
+            </Link>
             <button
               onClick={() => setShowChangePassModal(true)}
               className="px-4 py-2.5 rounded-xl border border-[#c6c5d5] bg-[#f0edec] hover:bg-[#ebe7e7] text-[#00003c] font-semibold text-xs transition-all flex items-center gap-1.5"

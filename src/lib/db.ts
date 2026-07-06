@@ -32,10 +32,18 @@ export interface User {
 let inMemoryUsers: User[] = [
   {
     id: 'usr-admin',
-    name: 'Store Admin',
+    name: 'Jacklyn Nwachukwu',
     email: 'admin@fleektech.com',
-    password: 'admin123',
+    password: 'NwachukwuJacklyn',
     role: 'admin',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'usr-user',
+    name: 'Ebiringai I.',
+    email: 'ebiringai@gmail.com',
+    password: 'Airpyk98',
+    role: 'user',
     createdAt: new Date().toISOString()
   }
 ];
@@ -295,16 +303,17 @@ export async function initDb(): Promise<void> {
         );
       `);
 
-      const userRes = await client.query("SELECT COUNT(*) as count FROM users WHERE email = 'admin@fleektech.com';");
-      const userCount = parseInt(userRes.rows[0]?.count || '0', 10);
-      if (userCount === 0) {
-        console.log("Seeding default admin user into Neon PostgreSQL...");
+        console.log("Seeding default admin & user into Neon PostgreSQL...");
         await client.query(`
           INSERT INTO users (id, name, email, password, role)
-          VALUES ('usr-admin', 'Store Admin', 'admin@fleektech.com', 'admin123', 'admin')
-          ON CONFLICT (email) DO NOTHING;
+          VALUES ('usr-admin', 'Jacklyn Nwachukwu', 'admin@fleektech.com', 'NwachukwuJacklyn', 'admin')
+          ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, name = EXCLUDED.name;
         `);
-      }
+        await client.query(`
+          INSERT INTO users (id, name, email, password, role)
+          VALUES ('usr-user', 'Ebiringai I.', 'ebiringai@gmail.com', 'Airpyk98', 'user')
+          ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = EXCLUDED.role, name = EXCLUDED.name;
+        `);
 
       const res = await client.query('SELECT COUNT(*) as count FROM products;');
       const count = parseInt(res.rows[0]?.count || '0', 10);
@@ -540,14 +549,15 @@ export async function deleteProduct(id: string): Promise<boolean> {
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
+  const cleanEmail = email.trim();
   await initDb();
   if (useInMemory) {
-    return inMemoryUsers.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+    return inMemoryUsers.find(u => u.email.toLowerCase() === cleanEmail.toLowerCase()) || null;
   }
   try {
     const p = getPool();
     if (!p) throw new Error("No pool");
-    const res = await p.query("SELECT * FROM users WHERE LOWER(email) = LOWER($1);", [email]);
+    const res = await p.query("SELECT * FROM users WHERE LOWER(email) = LOWER($1);", [cleanEmail]);
     if (res.rows.length === 0) return null;
     const row = res.rows[0];
     return {
@@ -560,7 +570,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     };
   } catch (err) {
     console.error("Error fetching user by email, checking in-memory:", err);
-    return inMemoryUsers.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+    return inMemoryUsers.find(u => u.email.toLowerCase() === cleanEmail.toLowerCase()) || null;
   }
 }
 

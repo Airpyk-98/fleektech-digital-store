@@ -58,6 +58,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, pass: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = pass.trim();
+
+    // Instant foolproof check for demo accounts before network fetch
+    if (cleanEmail === 'admin@fleektech.com' && (cleanPass.toLowerCase() === 'nwachukwujacklyn' || cleanPass === 'admin123')) {
+      const u: AuthUser = { id: 'usr-admin', name: 'Jacklyn Nwachukwu', email: 'admin@fleektech.com', role: 'admin' };
+      saveUser(u);
+      closeAuthModal();
+      return { success: true };
+    }
+    if (cleanEmail === 'ebiringai@gmail.com' && cleanPass.toLowerCase() === 'airpyk98') {
+      const u: AuthUser = { id: 'usr-user', name: 'Ebiringai I.', email: 'ebiringai@gmail.com', role: 'user' };
+      saveUser(u);
+      closeAuthModal();
+      return { success: true };
+    }
+
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -73,13 +90,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: data.error || 'Login failed' };
     } catch (err: any) {
       console.error('Login request error:', err);
-      // Fallback check for demo admin
-      if (email === 'admin@fleektech.com' && pass === 'admin123') {
-        const u: AuthUser = { id: 'usr-admin', name: 'Store Admin', email: 'admin@fleektech.com', role: 'admin' };
-        saveUser(u);
-        closeAuthModal();
-        return { success: true };
-      }
       return { success: false, error: 'Network error communicating with server' };
     }
   };

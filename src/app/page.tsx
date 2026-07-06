@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
+import OrdersModal from '@/components/OrdersModal';
+import SavedItemsModal from '@/components/SavedItemsModal';
 import { useCart } from '@/context/CartContext';
 import { Product } from '@/lib/db';
 
@@ -26,11 +28,10 @@ export default function Home() {
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'popularity' | 'price-low' | 'price-high'>('popularity');
-  const [wishlist, setWishlist] = useState<Record<string, boolean>>({});
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 36, seconds: 9 });
 
-  const { addToCart } = useCart();
+  const { addToCart, toggleSaveItem, isItemSaved } = useCart();
 
   useEffect(() => {
     fetchProducts();
@@ -73,9 +74,9 @@ export default function Home() {
     }
   };
 
-  const toggleWishlist = (id: string, e?: React.MouseEvent) => {
+  const toggleWishlist = (product: Product, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setWishlist((prev) => ({ ...prev, [id]: !prev[id] }));
+    toggleSaveItem(product);
   };
 
   // Filter and sort products
@@ -102,6 +103,8 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-[#fcf9f8]">
       <Navbar onSearch={setSearchQuery} onSelectCategory={setSelectedCategory} />
       <CartDrawer />
+      <OrdersModal />
+      <SavedItemsModal />
 
       {/* Main Storefront Canvas */}
       <main className="flex-1 pt-16 pb-24 md:pl-16">
@@ -227,10 +230,10 @@ export default function Home() {
                       </div>
                     )}
                     <button
-                      onClick={(e) => toggleWishlist(product.id, e)}
+                      onClick={(e) => toggleWishlist(product, e)}
                       className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 shadow flex items-center justify-center text-[#00003c] hover:text-[#D32F2F] transition-colors"
                     >
-                      <span className={`material-symbols-outlined text-lg ${wishlist[product.id] ? 'fill-icon text-[#D32F2F]' : ''}`}>
+                      <span className={`material-symbols-outlined text-lg ${isItemSaved(product.id) ? 'fill-icon text-[#D32F2F]' : ''}`}>
                         favorite
                       </span>
                     </button>
@@ -376,10 +379,10 @@ export default function Home() {
                     </div>
                   )}
                   <button
-                    onClick={(e) => toggleWishlist(product.id, e)}
+                    onClick={(e) => toggleWishlist(product, e)}
                     className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/90 shadow flex items-center justify-center text-[#464653] hover:text-[#D32F2F] transition-colors"
                   >
-                    <span className={`material-symbols-outlined text-[18px] ${wishlist[product.id] ? 'fill-icon text-[#D32F2F]' : ''}`}>
+                    <span className={`material-symbols-outlined text-[18px] ${isItemSaved(product.id) ? 'fill-icon text-[#D32F2F]' : ''}`}>
                       favorite
                     </span>
                   </button>
@@ -590,11 +593,11 @@ export default function Home() {
                   Add to Cart
                 </button>
                 <button
-                  onClick={() => toggleWishlist(selectedProduct.id)}
+                  onClick={() => toggleWishlist(selectedProduct)}
                   className="px-4 border border-[#c6c5d5] rounded-xl hover:border-[#00003c] flex items-center justify-center transition-colors"
                   title="Save to Wishlist"
                 >
-                  <span className={`material-symbols-outlined ${wishlist[selectedProduct.id] ? 'fill-icon text-[#D32F2F]' : 'text-[#464653]'}`}>
+                  <span className={`material-symbols-outlined ${isItemSaved(selectedProduct.id) ? 'fill-icon text-[#D32F2F]' : 'text-[#464653]'}`}>
                     favorite
                   </span>
                 </button>

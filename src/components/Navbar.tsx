@@ -12,7 +12,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ onSearch, onSelectCategory }: NavbarProps) {
-  const { totalItems, setIsCartOpen } = useCart();
+  const { totalItems, setIsCartOpen, setIsOrdersOpen, setIsSavedOpen } = useCart();
   const { user, isAuthModalOpen, authModalMode, openAuthModal, closeAuthModal, login, signup, logout, changePassword } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -92,8 +92,25 @@ export default function Navbar({ onSearch, onSelectCategory }: NavbarProps) {
 
   return (
     <>
+      {/* Admin Storefront Preview Return Banner */}
+      {user?.role === 'admin' && (
+        <div className="fixed top-0 left-0 right-0 h-10 bg-[#00003c] text-white px-4 md:px-12 text-xs md:text-sm font-bold flex items-center justify-between z-[100] shadow-md animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#ffb95c] text-base">admin_panel_settings</span>
+            <span>🛡️ Admin Mode: Previewing Storefront</span>
+          </div>
+          <Link
+            href="/admin"
+            className="bg-[#ffb95c] hover:bg-[#ffa504] text-[#00003c] px-3 py-1 rounded-lg font-bold flex items-center gap-1 transition-all shadow-sm active:scale-95 text-xs"
+          >
+            <span className="material-symbols-outlined text-sm">arrow_back</span>
+            Return to Admin Dashboard
+          </Link>
+        </div>
+      )}
+
       {/* TopAppBar - Stitch Design System */}
-      <header className="fixed top-0 w-full z-50 bg-[#fcf9f8] border-b border-[#c6c5d5] flex justify-between items-center px-4 md:px-12 h-16 shadow-none transition-all duration-300">
+      <header className={`fixed ${user?.role === 'admin' ? 'top-10' : 'top-0'} w-full z-50 bg-[#fcf9f8] border-b border-[#c6c5d5] flex justify-between items-center px-4 md:px-12 h-16 shadow-none transition-all duration-300`}>
         <div className="flex items-center gap-4">
           <button 
             onClick={() => {
@@ -189,14 +206,14 @@ export default function Navbar({ onSearch, onSelectCategory }: NavbarProps) {
                   )}
 
                   <div className="py-2 text-xs text-[#464653]">
-                    <a href="#" className="flex items-center gap-3 px-4 py-2 hover:bg-[#f6f3f2] hover:text-[#00003c] transition-colors">
+                    <button onClick={() => { setShowAccountDropdown(false); setIsOrdersOpen(true); }} className="w-full text-left flex items-center gap-3 px-4 py-2 hover:bg-[#f6f3f2] hover:text-[#00003c] transition-colors">
                       <span className="material-symbols-outlined text-lg">package_2</span>
                       Orders
-                    </a>
-                    <a href="#" className="flex items-center gap-3 px-4 py-2 hover:bg-[#f6f3f2] hover:text-[#00003c] transition-colors">
+                    </button>
+                    <button onClick={() => { setShowAccountDropdown(false); setIsSavedOpen(true); }} className="w-full text-left flex items-center gap-3 px-4 py-2 hover:bg-[#f6f3f2] hover:text-[#00003c] transition-colors">
                       <span className="material-symbols-outlined text-lg">favorite</span>
                       Saved Items
-                    </a>
+                    </button>
                     {user && (
                       <button 
                         onClick={() => { setShowAccountDropdown(false); setShowChangePassModal(true); }}
@@ -353,14 +370,14 @@ export default function Navbar({ onSearch, onSelectCategory }: NavbarProps) {
             </div>
 
             <div className="space-y-2 py-2">
-              <a href="#" className="flex items-center gap-3 p-3 bg-white rounded-xl border border-[#c6c5d5] text-sm text-[#1c1b1b]">
+              <button onClick={() => { setShowMobileAccountModal(false); setIsOrdersOpen(true); }} className="w-full text-left flex items-center gap-3 p-3 bg-white rounded-xl border border-[#c6c5d5] text-sm text-[#1c1b1b]">
                 <span className="material-symbols-outlined text-[#855400]">package_2</span>
                 My Orders
-              </a>
-              <a href="#" className="flex items-center gap-3 p-3 bg-white rounded-xl border border-[#c6c5d5] text-sm text-[#1c1b1b]">
+              </button>
+              <button onClick={() => { setShowMobileAccountModal(false); setIsSavedOpen(true); }} className="w-full text-left flex items-center gap-3 p-3 bg-white rounded-xl border border-[#c6c5d5] text-sm text-[#1c1b1b]">
                 <span className="material-symbols-outlined text-[#D32F2F]">favorite</span>
                 Saved Items
-              </a>
+              </button>
               <button 
                 onClick={() => { setShowMobileAccountModal(false); setShowChangePassModal(true); }}
                 className="w-full flex items-center gap-3 p-3 bg-white rounded-xl border border-[#c6c5d5] text-sm text-[#1c1b1b]"
