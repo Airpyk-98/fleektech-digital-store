@@ -246,8 +246,8 @@ function getPool(): Pool | null {
       pool = new Pool({
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
-        connectionTimeoutMillis: 5000,
-        query_timeout: 5000
+        connectionTimeoutMillis: 2500,
+        query_timeout: 2500
       });
     } catch (err) {
       console.error("Failed to create PostgreSQL pool, falling back to in-memory:", err);
@@ -258,16 +258,21 @@ function getPool(): Pool | null {
   return pool;
 }
 
+let initPromise: Promise<void> | null = null;
+
 export async function initDb(): Promise<void> {
   if (isDbInitialized || useInMemory) return;
-  const p = getPool();
-  if (!p) {
-    useInMemory = true;
-    isDbInitialized = true;
-    return;
-  }
+  if (initPromise) return initPromise;
 
-  try {
+  initPromise = (async () => {
+    const p = getPool();
+    if (!p) {
+      useInMemory = true;
+      isDbInitialized = true;
+      return;
+    }
+
+    try {
     const client = await p.connect();
     try {
       await client.query(`
@@ -358,6 +363,8 @@ export async function initDb(): Promise<void> {
     useInMemory = true;
     isDbInitialized = true;
   }
+  })();
+  return initPromise;
 }
 
 function mapRowToProduct(row: any): Product {
