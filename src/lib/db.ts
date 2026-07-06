@@ -20,6 +20,26 @@ export interface Product {
   createdAt?: string;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: 'user' | 'admin';
+  createdAt?: string;
+}
+
+let inMemoryUsers: User[] = [
+  {
+    id: 'usr-admin',
+    name: 'Store Admin',
+    email: 'admin@fleektech.com',
+    password: 'admin123',
+    role: 'admin',
+    createdAt: new Date().toISOString()
+  }
+];
+
 // Default Seed Products exactly matching the Stitch UI Guide
 const defaultProducts: Product[] = [
   {
@@ -264,6 +284,28 @@ export async function initDb(): Promise<void> {
         );
       `);
 
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id VARCHAR(50) PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          email VARCHAR(150) UNIQUE NOT NULL,
+          password VARCHAR(200) NOT NULL,
+          role VARCHAR(20) DEFAULT 'user',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      const userRes = await client.query("SELECT COUNT(*) as count FROM users WHERE email = 'admin@fleektech.com';");
+      const userCount = parseInt(userRes.rows[0]?.count || '0', 10);
+      if (userCount === 0) {
+        console.log("Seeding default admin user into Neon PostgreSQL...");
+        await client.query(`
+          INSERT INTO users (id, name, email, password, role)
+          VALUES ('usr-admin', 'Store Admin', 'admin@fleektech.com', 'admin123', 'admin')
+          ON CONFLICT (email) DO NOTHING;
+        `);
+      }
+
       const res = await client.query('SELECT COUNT(*) as count FROM products;');
       const count = parseInt(res.rows[0]?.count || '0', 10);
 
@@ -496,3 +538,88 @@ export async function deleteProduct(id: string): Promise<boolean> {
     return true;
   }
 }
+
+export async function getUserByEmail(email: string): Promise<User | null> {
+  await initDb();
+  if (useInMemory) {
+    return inMemoryUsers.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+  }
+  try {
+    const p = getPool();
+    if (!p) throw new Error("No pool");
+    const res = await p.query("SELECT * FROM users WHERE LOWER(email) = LOWER($1);", [email]);
+    if (res.rows.length === 0) return null;
+    const row = res.rows[0];
+    return {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      password: row.password,
+      role: row.role as 'user' | 'admin',
+      createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined
+    };
+  } catch (err) {
+    console.error("Error fetching user by email, checking in-memory:", err);
+    return inMemoryUsers.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+  }
+}
+
+export async function createUser(data: { name: string; email: string; password: string; role?: 'user' | 'admin' }): Promise<User> {
+  await initDb();
+  const id = `usr-${Date.now()}`;
+  const newUser: User = {
+    id,
+    name: data.name,
+    email: data.email,
+    password: data.password,
+    role: data.role || 'user',
+    createdAt: new Date().toISOString()
+  };
+
+  if (useInMemory) {
+    inMemoryUsers.push(newUser);
+    return newUser;
+  }
+
+  try {
+    const p = getPool();
+    if (!p) throw new Error("No pool");
+    await p.query(`
+      INSERT INTO users (id, name, email, password, role)
+      VALUES ($1, $2, $3, $4, $5);
+    `, [newUser.id, newUser.name, newUser.email, newUser.password, newUser.role]);
+    return newUser;
+  } catch (err) {
+    console.error("Error creating user in DB, adding to in-memory:", err);
+    inMemoryUsers.push(newUser);
+    return newUser;
+  }
+}
+
+export async function updateUserPassword(id: string, newPass: string): Promise<boolean> {
+  await initDb();
+  if (useInMemory) {
+    const idx = inMemoryUsers.findIndex(u => u.id === id);
+    if (idx !== -1) {
+      inMemoryUsers[idx].password = newPass;
+      return true;
+    }
+    return false;
+  }
+
+  try {
+    const p = getPool();
+    if (!p) throw new Error("No pool");
+    const res = await p.query("UPDATE users SET password = $1 WHERE id = $2;", [newPass, id]);
+    return (res.rowCount || 0) > 0;
+  } catch (err) {
+    console.error("Error updating password in DB, updating in-memory:", err);
+    const idx = inMemoryUsers.findIndex(u => u.id === id);
+    if (idx !== -1) {
+      inMemoryUsers[idx].password = newPass;
+      return true;
+    }
+    return false;
+  }
+}
+

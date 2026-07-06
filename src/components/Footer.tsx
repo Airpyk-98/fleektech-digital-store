@@ -37,16 +37,12 @@ export default function Footer() {
         </div>
 
         <div>
-          <h4 className="font-headline font-bold text-[#00003c] text-sm mb-4 uppercase tracking-wider">Management</h4>
+          <h4 className="font-headline font-bold text-[#00003c] text-sm mb-4 uppercase tracking-wider">About Us</h4>
           <ul className="space-y-2 text-sm">
-            <li>
-              <Link href="/admin" className="flex items-center gap-1.5 text-[#855400] font-semibold hover:underline">
-                <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
-                Admin Portal Access
-              </Link>
-            </li>
-            <li><span className="text-xs text-[#767684]">Database: Neon Serverless PostgreSQL</span></li>
-            <li><span className="text-xs text-[#767684]">Deployment: Vercel Production</span></li>
+            <li><a href="#" className="hover:text-[#00003c] transition-colors">Our Story & Brand</a></li>
+            <li><a href="#" className="hover:text-[#00003c] transition-colors">Investor Relations</a></li>
+            <li><a href="#" className="hover:text-[#00003c] transition-colors">Careers at FleekTech</a></li>
+            <li><a href="#" className="hover:text-[#00003c] transition-colors">Corporate Responsibility</a></li>
           </ul>
         </div>
       </div>
