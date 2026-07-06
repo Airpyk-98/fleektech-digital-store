@@ -16,197 +16,195 @@ export interface Product {
   description: string;
   specs: Record<string, string>;
   features?: string[];
+  brand?: string;
   createdAt?: string;
 }
 
-// Default Seed Products
+// Default Seed Products exactly matching the Stitch UI Guide
 const defaultProducts: Product[] = [
   {
     id: 'prod-1',
-    name: 'FleekTech Titan Pro Phone',
-    tagline: 'Next-Gen AI & Titanium Build',
-    price: 1199,
-    originalPrice: 1399,
-    category: 'Phones',
-    image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=800&q=80',
-    badge: 'NEW',
+    name: 'Sony WH-1000XM5 Noise Canceling Headphones',
+    tagline: 'Industry-leading noise cancellation with two processors and 8 microphones',
+    price: 285000,
+    originalPrice: 380000,
+    category: 'Audio',
+    brand: 'Sony',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCK4FR-O2OyJR59hJxYoH4XlELeZQU1nyU9UjWYGHNDQ66qYb-_ktZW6Db2kKlVIHgzWENHXLBBSxukLaGBYPnS5r54R-3W95PgVcI0MaqDwKB2iGuQya3ezJ28AxW_3iGZqRCZwAMov5oi_wF3tXL595OVYcaOFYlk_n4RpbUvDA5yb-KAcIIq46q2q5C5DyKs8m2iqmi-Z6dENSruRw0qyP7pknRSjCrAIXJL3r-pNk3VcQuHdG25',
+    badge: '-25%',
     rating: 4.9,
-    reviewsCount: 328,
+    reviewsCount: 124,
     stock: 45,
     isListed: true,
-    description: 'Experience the pinnacle of mobile innovation with aerospace-grade titanium casing, our customized Neural Quantum Processor, and an ultra-precise triple-lens camera array.',
+    description: 'A professional studio product shot of Sony WH-1000XM5 wireless noise-canceling headphones in silver. The lighting is soft and high-key, emphasizing the smooth matte finish and elegant design.',
     specs: {
-      Display: '6.8" Super Retina OLED, 120Hz',
-      Processor: 'Neural Quantum 9 Octa-Core',
-      RAM: '16GB LPDDR5X',
-      Storage: '512GB NVMe',
-      Battery: '5500mAh with 80W Fast Charge',
-      Camera: '200MP Main + 50MP Ultra-Wide + 48MP Telephoto'
+      Driver: '30mm Carbon Fiber',
+      Battery: '30 Hours with ANC On',
+      Connectivity: 'Bluetooth 5.2, USB-C',
+      Weight: '250 grams'
     },
-    features: ['Aerospace Titanium Armor', 'Satellite Emergency Communication', 'Sub-0 Cooling Chamber', 'IP68 Water & Dust Resistance']
+    features: ['Auto NC Optimizer', 'Precise Voice Pickup Technology', 'Multipoint Connection']
   },
   {
     id: 'prod-2',
-    name: 'FleekTech Pulse ANC Headphones',
-    tagline: 'Studio-Grade Acoustic Immersion',
-    price: 299,
-    originalPrice: 349,
-    category: 'Audio',
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
-    badge: 'BESTSELLER',
+    name: 'Samsung Galaxy S24 Ultra 5G - 512GB',
+    tagline: 'Titanium exterior and a 6.8-inch flat display with Galaxy AI',
+    price: 1450000,
+    originalPrice: 1610000,
+    category: 'Phones',
+    brand: 'Samsung',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBTWTTZC09PNsz0NRbyu-ZmNn7pRcCTsWo89H-QJohxuF8MNP2AgcvPW5PGb4MX6QcFLg3az7LuxGJwfzXGF8d-8wPpZtr-XP0YBMmi_rCewo3n_cjFHuJz0o2NoQNDh3ZuQLlADcAVMhVSPQaf1BIjeIj8oZsJc0alDddfphJxs1-hRX8Gc8wK3kBeBaepLOCinGJz59Tp5w1AzJ-nPYbuhU7HopJGWv9eVd7JssQADbOOMTadZKt2',
+    badge: '-10%',
     rating: 4.8,
-    reviewsCount: 512,
-    stock: 120,
+    reviewsCount: 89,
+    stock: 60,
     isListed: true,
-    description: 'Engineered for audiophiles, Pulse ANC combines custom 40mm beryllium drivers with hybrid active noise cancellation that eliminates 98% of ambient sound.',
+    description: 'A crisp, high-detail product photo of a Samsung Galaxy S24 Ultra in Titanium Violet. Positioned to show the sleek frame and camera array.',
     specs: {
-      Driver: '40mm Beryllium Dynamic Drivers',
-      Battery: '60 Hours (ANC On) / 80 Hours (ANC Off)',
-      Connectivity: 'Bluetooth 5.4, USB-C Lossless Audio',
-      Weight: '245 grams',
-      Microphone: '6-Mic Beamforming Array with AI Noise Reduction'
+      Display: '6.8" Dynamic AMOLED 2X, 120Hz',
+      Processor: 'Snapdragon 8 Gen 3',
+      Storage: '512GB NVMe',
+      Camera: '200MP Main + 50MP Periscope'
     },
-    features: ['Spatial Audio with Dynamic Head Tracking', 'Custom EQ via FleekTech App', 'Ultra-Plush Memory Foam Earcups', 'Foldable Compact Design']
+    features: ['Built-in S Pen', 'Galaxy AI Translate', 'Titanium Armor Frame', 'IP68 Water Resistance']
   },
   {
     id: 'prod-3',
-    name: 'FleekTech CyberBook 16 Pro',
-    tagline: 'Unleash Unrivaled Creative Power',
-    price: 1899,
-    originalPrice: 2099,
+    name: 'Dell XPS 15 9530 Intel Core i9 - 32GB RAM',
+    tagline: 'Breathtaking visual experience with OLED display and RTX 4070',
+    price: 2100000,
+    originalPrice: 2470000,
     category: 'Laptops',
-    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
-    badge: 'HOT',
+    brand: 'Dell',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLWCF3er5FLNwHpw4bZMLsbXaMgE2ylPRQ4SvHjDdnbcOcxZyYurTT7Gf9sSQ8poGz-lekoMJLZ7Ii8ZAouoUM_sFYiLpzrsLy95_wiAEz2D7jmCvgVTc55pPlqdtD-bRLa6UmnHfdxfNILJO6lJB5iJWgm_GQG4G0ljGvavNiAqQ8p6ib7Xg2MzPzDVSPvfzER7vmU9C-ZUc2sRmBlyysLDLgqniHlL9wjnYoPCimOMKQgsUOH2Dy',
+    badge: '-15%',
     rating: 4.9,
-    reviewsCount: 184,
-    stock: 25,
+    reviewsCount: 56,
+    stock: 20,
     isListed: true,
-    description: 'The ultimate portable workstation designed for 3D renderers, developers, and AI engineers. Features a stunning Mini-LED display and all-day battery life.',
+    description: 'A premium product photograph of a Dell XPS 15 laptop in Platinum Silver. Features a vibrant high-resolution display on its near-borderless screen.',
     specs: {
-      Display: '16.0" 3.2K Mini-LED 165Hz (1200 nits)',
-      Processor: 'FleekTech M3 Max 16-Core CPU',
-      GPU: '40-Core Neural Graphics Engine',
-      RAM: '32GB Unified Memory',
-      Storage: '1TB PCIe 4.0 SSD',
-      Ports: '3x Thunderbolt 4, HDMI 2.1, SDXC, MagCharge'
+      Display: '15.6" 3.5K OLED Touch 400 nits',
+      Processor: '13th Gen Intel Core i9-13900H',
+      RAM: '32GB DDR5 4800MHz',
+      Storage: '1TB PCIe 4.0 SSD'
     },
-    features: ['Vapor Chamber Dual-Fan Cooling', 'Studio-Quality 6-Speaker System', '1080p IR Webcam with FaceID', 'Full Aluminum Unibody']
+    features: ['CNC Machined Aluminum', 'Carbon Fiber Palm Rest', 'Quad Speaker Design']
   },
   {
     id: 'prod-4',
-    name: 'FleekTech Watch Ultra X',
-    tagline: 'Rugged Endurance & Health Tracking',
-    price: 399,
-    originalPrice: 449,
-    category: 'Wearables',
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80',
-    badge: 'SALE',
-    rating: 4.7,
-    reviewsCount: 409,
-    stock: 85,
+    name: 'Nintendo Switch OLED Model with White Joy-Con',
+    tagline: 'Vibrant 7-inch OLED screen with wide adjustable stand',
+    price: 420000,
+    originalPrice: 525000,
+    category: 'Gaming',
+    brand: 'Nintendo',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCjLCqYOuTP9adyW0eOPYRL_uDpDM-WrIQ9tGNsrqt5b1nnc3t3NrEBVdEY_LtqgzAN-Xa3lpFLAzBx4VQLDjglyMF2VGrAy_LDe_Zole6kxUsX8tYWcJ9-aOJwM6upHewTk41u45yBnFZ1c3jmQPcXvUUkicymU1FnX52m9Cp1AVZH4hOUcpfPAbuSzBm7TIDNw4JnZ3IGERkEgTtPl2DAqEjKTXmU_Jpp1nJTBuBULVhAq7kQvw9E',
+    badge: '-20%',
+    rating: 4.8,
+    reviewsCount: 310,
+    stock: 150,
     isListed: true,
-    description: 'Built for extreme environments and daily fitness optimization. Monitors ECG, blood oxygen, body temperature, and sleep architecture with clinical accuracy.',
+    description: 'An action-oriented product shot of a Nintendo Switch OLED Model with White Joy-Cons. Console shown in handheld mode with a bright game scene.',
     specs: {
-      Case: '49mm Grade-5 Titanium with Sapphire Crystal',
-      Display: 'Always-On Retina AMOLED (3000 nits peak)',
-      Battery: 'Up to 72 Hours Normal Use / 14 days Low Power',
-      Sensors: 'ECG, SpO2, Skin Temp, Dual-Frequency GPS, Barometer',
-      WaterResistance: '100m Water Resistant (Dive Certified to 40m)'
+      Display: '7.0" OLED Multi-Touch Screen',
+      Storage: '64GB Internal Storage',
+      Audio: 'Enhanced Onboard Audio',
+      Connectivity: 'Wired LAN Port in Dock'
     },
-    features: ['Dual-Frequency Precision GPS', 'AI Workout Form Coach', 'Emergency Siren & Crash Detection', 'Cellular LTE Integrated']
+    features: ['Wide Adjustable Stand', '3 Play Modes (TV, Tabletop, Handheld)', 'HD Rumble']
   },
   {
     id: 'prod-5',
-    name: 'FleekTech MagPod Wireless Earbuds',
-    tagline: 'Crystal Clear Audio & Instant Pairing',
-    price: 149,
-    originalPrice: 179,
-    category: 'Audio',
-    image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80',
-    badge: '',
-    rating: 4.6,
-    reviewsCount: 265,
-    stock: 200,
+    name: 'iPhone 15 Pro Max 256GB - Blue Titanium',
+    tagline: 'Forged in titanium with the groundbreaking A17 Pro chip',
+    price: 1850000,
+    originalPrice: 2000000,
+    category: 'Phones',
+    brand: 'Apple',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDfo0RsMY4Qyl7Z_XfajpCADEUMuBoZ0s92AkP-4HBud6HwQZIccQTakDQ7UDgtxukJ2VFy_fr16SZOyhJwRWrVV-IK5synazBG4_u6m0tuukc8lwil1kanjSQaFXdirfEku7VGKUT4znxrdmdrlCpHhNKh-bx2IhzZ1KlDEFqnRHc4hQ58SxsraX2c5aHkE73G7NF3EkZCukpCtUM1LKSv-eACdrTGYJ_yrzzcuN5yuFKbAv2GMPUJ',
+    badge: 'Best Seller',
+    rating: 4.9,
+    reviewsCount: 48,
+    stock: 80,
     isListed: true,
-    description: 'Compact wireless earbuds featuring adaptive transparency mode, punchy bass response, and MagSafe compatible wireless charging case.',
+    description: 'A sleek, high-end iPhone 15 Pro Max in Titanium Blue showcased against a clean white background with soft cinematic lighting.',
     specs: {
-      Driver: '11mm Custom Neodymium Drivers',
-      Battery: '8 Hours (Earbuds) + 32 Hours with Case',
-      Charging: 'MagSafe Wireless + USB-C Fast Charge (10m for 2h audio)',
-      Protection: 'IPX4 Sweat & Weather Resistant'
+      Display: '6.7" Super Retina XDR OLED, 120Hz ProMotion',
+      Processor: 'Apple A17 Pro (3nm)',
+      Storage: '256GB NVMe',
+      Camera: '48MP Main + 12MP Ultra Wide + 12MP 5x Telephoto'
     },
-    features: ['Adaptive Transparency Mode', 'Touch Sensor Controls', 'Find My MagPod Integration', 'Ultra-Low Gaming Latency']
+    features: ['Aerospace Titanium Design', 'Customizable Action Button', 'USB-C 3.0 Speeds', 'Emergency SOS via Satellite']
   },
   {
     id: 'prod-6',
-    name: 'FleekTech PowerHub 100W GaN Charger',
-    tagline: 'Ultra-Compact Quad-Port Powerhouse',
-    price: 79,
-    originalPrice: 99,
-    category: 'Accessories',
-    image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=800&q=80',
+    name: 'Galaxy S24 Ultra 512GB - Titanium Black',
+    tagline: 'The ultimate Galaxy AI experience with Quad Tele System',
+    price: 1620000,
+    originalPrice: 1750000,
+    category: 'Phones',
+    brand: 'Samsung',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuChHUGHFYffIxGL8DDwshyLgP4jHTrM4jPW-JBmFuA7PpObE6DOfErQOJRmLW2gY-75BFo3RcbK54BzAHVSpLUFqRbHgi7PPS5Sq1PHUJ-0-o_8qVJxGr1pYqQxtwPsd93ZB4pj9bD96TvQDajU_3YdGlc4X40oL6ADMRMwu4EMcwsYV6qPJziiek_GMGFG1u55-Zt-EUnpe2ZEUjJyKujjMkcp3Ccvt6AvFH3nufv4b7hu0xrVu-Bs',
     badge: '',
     rating: 4.8,
-    reviewsCount: 620,
-    stock: 350,
+    reviewsCount: 32,
+    stock: 40,
     isListed: true,
-    description: 'Power your laptop, phone, tablet, and watch simultaneously with advanced Gallium Nitride (GaN) technology that stays cool under heavy load.',
+    description: 'A Samsung Galaxy S24 Ultra in Phantom Black positioned elegantly on a white reflective surface under bright studio lights.',
     specs: {
-      Output: '100W Max Total Output',
-      Ports: '3x USB-C (Power Delivery 3.0) + 1x USB-A (QuickCharge 4.0)',
-      Technology: 'GaN III Smart Power Distribution',
-      Safety: 'Over-voltage, over-current, and thermal protection'
+      Display: '6.8" Flat Dynamic AMOLED 2X',
+      Processor: 'Snapdragon 8 Gen 3 for Galaxy',
+      Battery: '5000mAh with 45W Fast Charging'
     },
-    features: ['Pocket-Sized Foldable Prongs', 'Smart Device Recognition', 'Cool-Touch Thermal Shield', 'Worldwide Universal Voltage (100-240V)']
+    features: ['ProVisual Engine', 'S Pen Included', 'Corning Gorilla Armor']
   },
   {
     id: 'prod-7',
-    name: 'FleekTech ProTab 12.4 OLED',
-    tagline: 'Your Portable Studio & Entertainment Hub',
-    price: 799,
-    originalPrice: 899,
+    name: 'Pixel 8 Pro 12GB RAM 128GB - Porcelain',
+    tagline: 'Google AI built-in with Pro camera controls and thermometer',
+    price: 1150000,
+    originalPrice: 1300000,
     category: 'Phones',
-    image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=800&q=80',
-    badge: 'NEW',
-    rating: 4.8,
-    reviewsCount: 142,
-    stock: 60,
+    brand: 'Google',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD56rIBWNcTHklO6wKVEutrdKva0jPui4W6Zt0ZMzZuNDRfrbNUxSBbW5IeVV0Jo6v-IkSFuh3MxIKn5zc8ANCuF9FJucZmzi9j8jKaiv3d_IXEBWaFx-ErubouCxF_FIOKCBI9nW9gkzLiXBaoIaydsOiRmbZ56lpMZBZqnePIc0GAKvKBg8MWD0ERr0zcB9Bp5eCC1Vu1QouXXRMjfFRrtRwIC0MpfiBzveIBfdC1vby9CiZ_BTB5',
+    badge: 'Best Seller',
+    rating: 4.7,
+    reviewsCount: 15,
+    stock: 55,
     isListed: true,
-    description: 'An expansive 12.4-inch OLED tablet designed for sketching, multitasking, and immersive media consumption. Includes the magnetic FleekPen stylus.',
+    description: 'A Google Pixel 8 Pro in Porcelain color shown at a 45-degree angle in a minimalist setting with soft matte glass back.',
     specs: {
-      Display: '12.4" Dynamic AMOLED 2X, 120Hz',
-      Processor: 'Neural Quantum 8X Tab Edition',
-      Storage: '256GB Expandable via microSD',
-      Audio: 'Quad Speakers tuned by AKG with Dolby Atmos',
-      Stylus: 'FleekPen included (4096 pressure levels, 2ms latency)'
+      Display: '6.7" Super Actua OLED (1344x2992), 1-120Hz',
+      Processor: 'Google Tensor G3 + Titan M2',
+      RAM: '12GB LPDDR5X'
     },
-    features: ['Desktop Mode Desktop Experience', 'Magnetic Stylus Dock', 'Ultra-Thin 5.5mm Profile', 'Multi-Window Split Screen']
+    features: ['Magic Editor & Audio Magic Eraser', 'Temperature Sensor', '7 Years of OS & Security Updates']
   },
   {
     id: 'prod-8',
-    name: 'FleekTech VR Horizon Headset',
-    tagline: 'Step Into the Next Spatial Frontier',
-    price: 499,
-    originalPrice: 599,
-    category: 'Wearables',
-    image: 'https://images.unsplash.com/photo-1622979135225-d2ba269bc1df?auto=format&fit=crop&w=800&q=80',
-    badge: 'SALE',
-    rating: 4.7,
-    reviewsCount: 98,
-    stock: 40,
+    name: 'Xiaomi 14 Ultra 5G 16GB/512GB - White',
+    tagline: 'Leica Summilux optical lens with variable aperture',
+    price: 1380000,
+    originalPrice: 1500000,
+    category: 'Phones',
+    brand: 'Xiaomi',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAH31Wj3WvzRI_afEoqUMGonEbIaveFgdBDivN89zSz68DuEoppQ_lhoQRuK2KAKrtavIFZIjgCiuqvOsTqGxcCI42y3kwmreAgd6xNy4IanjEReG9rozmuSSgSftw5sjDD1aQ7O_wYmIbv1nDhhzcIavR4ZKkravyClmKwjG-PGtmHohd06QliQzCcag8WDMEgtJmvrwex4g-94JqbGPGwdGGCFL5a5LLjOz-Xk4sQYEj8dsjy5A0K',
+    badge: '',
+    rating: 4.8,
+    reviewsCount: 24,
+    stock: 30,
     isListed: true,
-    description: 'Standalone virtual and mixed reality headset with 4K per-eye resolution, full color passthrough, and ergonomic counter-balanced headband.',
+    description: 'A Xiaomi 14 Ultra displayed against a clean layout. The circular Leica camera module is the focal point.',
     specs: {
-      Resolution: '4K+ Infinite Display (2064x2208 per eye)',
-      RefreshRate: '90Hz / 120Hz Experimental',
-      Tracking: 'Inside-Out 6DoF Optical & Hand Tracking',
-      Weight: '515 grams balanced distribution'
+      Camera: 'Leica 50MP Quad Camera Array',
+      Display: '6.73" WQHD+ AMOLED 120Hz (3000 nits)',
+      Charging: '90W HyperCharge + 80W Wireless'
     },
-    features: ['Full Color High-Res Passthrough', 'No External PC Required', '3D Spatial Audio Speakers', 'Widest 110° Field of View']
+    features: ['Leica Summilux Optical Lens', 'Snapdragon 8 Gen 3 Mobile Platform', 'Xiaomi Shield Glass']
   }
 ];
 
-// In-Memory Fallback Database
 let inMemoryProducts: Product[] = [...defaultProducts];
 let isDbInitialized = false;
 let useInMemory = false;
@@ -249,9 +247,10 @@ export async function initDb(): Promise<void> {
           id VARCHAR(255) PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
           tagline VARCHAR(255),
-          price NUMERIC(10, 2) NOT NULL,
-          original_price NUMERIC(10, 2),
+          price NUMERIC(15, 2) NOT NULL,
+          original_price NUMERIC(15, 2),
           category VARCHAR(100) NOT NULL,
+          brand VARCHAR(100),
           image TEXT,
           badge VARCHAR(50),
           rating NUMERIC(3, 1),
@@ -269,12 +268,16 @@ export async function initDb(): Promise<void> {
       const count = parseInt(res.rows[0]?.count || '0', 10);
 
       if (count === 0) {
-        console.log("Seeding default FleekTech products into Neon PostgreSQL...");
+        console.log("Seeding Stitch FleekTech products into Neon PostgreSQL...");
         for (const prod of defaultProducts) {
           await client.query(`
-            INSERT INTO products (id, name, tagline, price, original_price, category, image, badge, rating, reviews_count, stock, is_listed, description, specs, features)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-            ON CONFLICT (id) DO NOTHING;
+            INSERT INTO products (id, name, tagline, price, original_price, category, brand, image, badge, rating, reviews_count, stock, is_listed, description, specs, features)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            ON CONFLICT (id) DO UPDATE SET 
+              name = EXCLUDED.name,
+              price = EXCLUDED.price,
+              image = EXCLUDED.image,
+              brand = EXCLUDED.brand;
           `, [
             prod.id,
             prod.name,
@@ -282,6 +285,7 @@ export async function initDb(): Promise<void> {
             prod.price,
             prod.originalPrice || null,
             prod.category,
+            prod.brand || 'FleekTech',
             prod.image,
             prod.badge || '',
             prod.rating,
@@ -322,6 +326,7 @@ function mapRowToProduct(row: any): Product {
     price: parseFloat(row.price),
     originalPrice: row.original_price ? parseFloat(row.original_price) : undefined,
     category: row.category,
+    brand: row.brand || 'FleekTech',
     image: row.image || '',
     badge: row.badge || '',
     rating: parseFloat(row.rating || '4.8'),
@@ -394,8 +399,8 @@ export async function createProduct(data: Omit<Product, 'id'> & { id?: string })
     const p = getPool();
     if (!p) throw new Error("No pool");
     await p.query(`
-      INSERT INTO products (id, name, tagline, price, original_price, category, image, badge, rating, reviews_count, stock, is_listed, description, specs, features)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15);
+      INSERT INTO products (id, name, tagline, price, original_price, category, brand, image, badge, rating, reviews_count, stock, is_listed, description, specs, features)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16);
     `, [
       newProd.id,
       newProd.name,
@@ -403,6 +408,7 @@ export async function createProduct(data: Omit<Product, 'id'> & { id?: string })
       newProd.price,
       newProd.originalPrice || null,
       newProd.category,
+      newProd.brand || 'FleekTech',
       newProd.image,
       newProd.badge || '',
       newProd.rating,
@@ -439,14 +445,15 @@ export async function updateProduct(id: string, data: Partial<Product>): Promise
     if (!p) throw new Error("No pool");
     await p.query(`
       UPDATE products
-      SET name = $1, tagline = $2, price = $3, original_price = $4, category = $5, image = $6, badge = $7, rating = $8, reviews_count = $9, stock = $10, is_listed = $11, description = $12, specs = $13, features = $14
-      WHERE id = $15;
+      SET name = $1, tagline = $2, price = $3, original_price = $4, category = $5, brand = $6, image = $7, badge = $8, rating = $9, reviews_count = $10, stock = $11, is_listed = $12, description = $13, specs = $14, features = $15
+      WHERE id = $16;
     `, [
       updated.name,
       updated.tagline,
       updated.price,
       updated.originalPrice || null,
       updated.category,
+      updated.brand || 'FleekTech',
       updated.image,
       updated.badge || '',
       updated.rating,

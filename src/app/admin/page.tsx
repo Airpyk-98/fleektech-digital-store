@@ -1,424 +1,383 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { Product } from '@/lib/db';
-import { ShieldAlert, Plus, Edit3, Eye, EyeOff, Trash2, Search, ArrowLeft, CheckCircle2, Sparkles, Package, Layers, DollarSign, RefreshCw, AlertCircle, Save, X } from 'lucide-react';
 
 export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  
-  // Modals
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null);
-  const [specsInput, setSpecsInput] = useState('');
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Form State
+  const [formName, setFormName] = useState('');
+  const [formTagline, setFormTagline] = useState('');
+  const [formPrice, setFormPrice] = useState('');
+  const [formOriginalPrice, setFormOriginalPrice] = useState('');
+  const [formCategory, setFormCategory] = useState('Phones');
+  const [formBrand, setFormBrand] = useState('FleekTech');
+  const [formImage, setFormImage] = useState('');
+  const [formBadge, setFormBadge] = useState('');
+  const [formStock, setFormStock] = useState('50');
+  const [formRating, setFormRating] = useState('4.8');
+  const [formReviewsCount, setFormReviewsCount] = useState('100');
+  const [formDescription, setFormDescription] = useState('');
+  const [formSpecs, setFormSpecs] = useState('{\n  "Display": "6.8 inch",\n  "Processor": "AI Neural Chip"\n}');
+  const [formFeatures, setFormFeatures] = useState('Titanium Build, Fast Charging, AI Processor');
 
   useEffect(() => {
-    fetchAdminProducts();
+    fetchProducts();
   }, []);
 
-  const fetchAdminProducts = async () => {
-    setLoading(true);
+  const showStatus = (text: string, type: 'success' | 'error' = 'success') => {
+    setStatusMessage({ type, text });
+    setTimeout(() => setStatusMessage(null), 4000);
+  };
+
+  const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/products?admin=true');
-      const data = await res.json();
-      if (data.success) {
-        setProducts(data.products);
+      setLoading(true);
+      const res = await fetch('/api/products?all=true');
+      if (res.ok) {
+        const data = await res.json();
+        setProducts(data);
       }
     } catch (err) {
-      console.error('Failed to fetch admin products:', err);
+      console.error('Error fetching admin products:', err);
+      showStatus('Failed to load products from database.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const showNotification = (msg: string) => {
-    setActionMessage(msg);
-    setTimeout(() => setActionMessage(null), 3000);
-  };
-
-  // Toggle List / Delist
   const handleToggleList = async (product: Product) => {
-    const newStatus = !product.isListed;
     try {
-      // Optimistic update
-      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isListed: newStatus } : p));
-      
+      const updatedStatus = !product.isListed;
       const res = await fetch(`/api/products/${product.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isListed: newStatus }),
+        body: JSON.stringify({ isListed: updatedStatus }),
       });
-      const data = await res.json();
-      if (data.success) {
-        showNotification(`Product "${product.name}" is now ${newStatus ? 'LISTED (Live)' : 'DELISTED (Hidden)'}`);
+      if (res.ok) {
+        const updated = await res.json();
+        setProducts(products.map((p) => (p.id === product.id ? updated : p)));
+        showStatus(`Product "${product.name}" is now ${updatedStatus ? 'LISTED (Visible)' : 'DELISTED (Hidden)'}.`);
       } else {
-        fetchAdminProducts();
+        showStatus('Failed to update listing status.', 'error');
       }
     } catch (err) {
       console.error('Error toggling list status:', err);
-      fetchAdminProducts();
+      showStatus('Error communicating with server.', 'error');
     }
   };
 
-  // Delete Product
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to completely delete "${name}"?`)) return;
+    if (!window.confirm(`Are you sure you want to permanently delete "${name}"?`)) return;
     try {
-      setProducts(prev => prev.filter(p => p.id !== id));
       const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        showNotification(`Deleted "${name}" successfully.`);
+      if (res.ok) {
+        setProducts(products.filter((p) => p.id !== id));
+        showStatus(`Product "${name}" deleted permanently.`);
       } else {
-        fetchAdminProducts();
+        showStatus('Failed to delete product.', 'error');
       }
     } catch (err) {
       console.error('Error deleting product:', err);
-      fetchAdminProducts();
+      showStatus('Error communicating with server.', 'error');
     }
   };
 
-  // Open Edit Modal
-  const openEdit = (product: Product) => {
-    setCurrentProduct({ ...product });
-    setSpecsInput(JSON.stringify(product.specs || {}, null, 2));
-    setIsEditModalOpen(true);
+  const openCreateModal = () => {
+    setIsCreating(true);
+    setEditingProduct(null);
+    setFormName('');
+    setFormTagline('');
+    setFormPrice('500000');
+    setFormOriginalPrice('');
+    setFormCategory('Phones');
+    setFormBrand('FleekTech');
+    setFormImage('https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=600&auto=format&fit=crop&q=80');
+    setFormBadge('New');
+    setFormStock('50');
+    setFormRating('5.0');
+    setFormReviewsCount('1');
+    setFormDescription('Cutting-edge electronics engineered for top tier performance.');
+    setFormSpecs('{\n  "Warranty": "2 Years Titanium Care",\n  "Connectivity": "5G & Wi-Fi 7"\n}');
+    setFormFeatures('Aerospace Titanium, Neural AI Chip, Studio Fidelity Audio');
   };
 
-  // Open Create Modal
-  const openCreate = () => {
-    setCurrentProduct({
-      name: '',
-      tagline: '',
-      price: 199,
-      originalPrice: undefined,
-      category: 'Phones',
-      image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=800&q=80',
-      badge: 'NEW',
-      rating: 5.0,
-      reviewsCount: 1,
-      stock: 50,
-      isListed: true,
-      description: '',
-      specs: {}
-    });
-    setSpecsInput('{\n  "Display": "6.8 inch OLED",\n  "Processor": "Neural AI Core"\n}');
-    setIsCreateModalOpen(true);
+  const openEditModal = (product: Product) => {
+    setIsCreating(false);
+    setEditingProduct(product);
+    setFormName(product.name);
+    setFormTagline(product.tagline);
+    setFormPrice(product.price.toString());
+    setFormOriginalPrice(product.originalPrice ? product.originalPrice.toString() : '');
+    setFormCategory(product.category);
+    setFormBrand(product.brand || 'FleekTech');
+    setFormImage(product.image);
+    setFormBadge(product.badge || '');
+    setFormStock(product.stock.toString());
+    setFormRating(product.rating.toString());
+    setFormReviewsCount(product.reviewsCount.toString());
+    setFormDescription(product.description);
+    setFormSpecs(JSON.stringify(product.specs || {}, null, 2));
+    setFormFeatures((product.features || []).join(', '));
   };
 
-  // Save Edit
-  const handleSaveEdit = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentProduct || !currentProduct.id) return;
-
-    let parsedSpecs = {};
     try {
-      parsedSpecs = JSON.parse(specsInput);
-    } catch (err) {
-      alert('Invalid JSON in Specifications field!');
-      return;
-    }
+      let parsedSpecs = {};
+      try {
+        parsedSpecs = JSON.parse(formSpecs);
+      } catch (e) {
+        showStatus('Invalid JSON format in Specifications field.', 'error');
+        return;
+      }
 
-    const payload = { ...currentProduct, specs: parsedSpecs };
+      const parsedFeatures = formFeatures.split(',').map((f) => f.trim()).filter(Boolean);
 
-    try {
-      const res = await fetch(`/api/products/${currentProduct.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setProducts(prev => prev.map(p => p.id === currentProduct.id ? data.product : p));
-        setIsEditModalOpen(false);
-        showNotification(`Updated "${payload.name}" successfully.`);
-      } else {
-        alert(data.error || 'Failed to update product');
+      const payload = {
+        name: formName,
+        tagline: formTagline,
+        price: parseFloat(formPrice) || 0,
+        originalPrice: formOriginalPrice ? parseFloat(formOriginalPrice) : undefined,
+        category: formCategory,
+        brand: formBrand,
+        image: formImage,
+        badge: formBadge,
+        stock: parseInt(formStock, 10) || 0,
+        rating: parseFloat(formRating) || 5.0,
+        reviewsCount: parseInt(formReviewsCount, 10) || 1,
+        description: formDescription,
+        specs: parsedSpecs,
+        features: parsedFeatures,
+        isListed: editingProduct ? editingProduct.isListed : true,
+      };
+
+      if (isCreating) {
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const created = await res.json();
+          setProducts([created, ...products]);
+          showStatus(`Product "${created.name}" created successfully!`);
+          setIsCreating(false);
+        } else {
+          showStatus('Failed to create product.', 'error');
+        }
+      } else if (editingProduct) {
+        const res = await fetch(`/api/products/${editingProduct.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          setProducts(products.map((p) => (p.id === editingProduct.id ? updated : p)));
+          showStatus(`Product "${updated.name}" updated successfully!`);
+          setEditingProduct(null);
+        } else {
+          showStatus('Failed to update product.', 'error');
+        }
       }
     } catch (err) {
-      console.error('Error saving edit:', err);
-      alert('Error updating product');
+      console.error('Error saving product:', err);
+      showStatus('Error communicating with server.', 'error');
     }
   };
 
-  // Save Create
-  const handleSaveCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentProduct) return;
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.brand?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-    let parsedSpecs = {};
-    try {
-      parsedSpecs = JSON.parse(specsInput);
-    } catch (err) {
-      alert('Invalid JSON in Specifications field!');
-      return;
-    }
-
-    const payload = { ...currentProduct, specs: parsedSpecs };
-
-    try {
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setProducts(prev => [data.product, ...prev]);
-        setIsCreateModalOpen(false);
-        showNotification(`Created "${payload.name}" successfully.`);
-      } else {
-        alert(data.error || 'Failed to create product');
-      }
-    } catch (err) {
-      console.error('Error creating product:', err);
-      alert('Error creating product');
-    }
-  };
-
-  // Stats
-  const totalProducts = products.length;
-  const listedCount = products.filter(p => p.isListed).length;
-  const delistedCount = products.filter(p => !p.isListed).length;
-  const totalStockValue = products.reduce((sum, p) => sum + p.price * p.stock, 0);
-
-  const filteredProducts = products.filter(p => {
-    const matchesCat = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();
-    const matchesSearch = !searchQuery || 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      p.category.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCat && matchesSearch;
-  });
+  const totalValue = products.reduce((acc, p) => acc + p.price * p.stock, 0);
+  const listedCount = products.filter((p) => p.isListed).length;
+  const delistedCount = products.filter((p) => !p.isListed).length;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex flex-col selection:bg-cyan-500 selection:text-black">
-      {/* Top Bar */}
-      <header className="sticky top-0 z-40 bg-zinc-900/90 backdrop-blur-md border-b border-zinc-800 px-4 sm:px-8 py-4 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all flex items-center gap-1.5 text-xs font-bold"
+    <div className="min-h-screen flex flex-col bg-[#fcf9f8]">
+      <Navbar />
+
+      <main className="flex-1 pt-24 pb-24 px-4 md:px-12 max-w-7xl mx-auto w-full">
+        {/* Status Notification Banner */}
+        {statusMessage && (
+          <div
+            className={`mb-6 p-4 rounded-xl flex items-center justify-between shadow-md animate-in fade-in ${
+              statusMessage.type === 'success'
+                ? 'bg-[#2E7D32]/10 border border-[#2E7D32] text-[#2E7D32]'
+                : 'bg-[#D32F2F]/10 border border-[#D32F2F] text-[#D32F2F]'
+            }`}
           >
-            <ArrowLeft size={16} />
-            <span className="hidden sm:inline">Storefront</span>
-          </Link>
-          <div className="h-6 w-px bg-zinc-800" />
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
-              <ShieldAlert size={18} />
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined">
+                {statusMessage.type === 'success' ? 'check_circle' : 'error'}
+              </span>
+              <span className="font-semibold text-sm">{statusMessage.text}</span>
             </div>
-            <div>
-              <h1 className="font-extrabold text-base sm:text-lg tracking-tight">FleekTech Admin Vanguard</h1>
-              <p className="text-[11px] text-zinc-500 font-medium">Full Control • List, Delist & Edit Every Detail</p>
+            <button onClick={() => setStatusMessage(null)} className="p-1 hover:opacity-70">
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+        )}
+
+        {/* Admin Header & Stats - Stitch UI Guide */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 bg-white p-6 md:p-8 rounded-2xl border border-[#c6c5d5] shadow-sm">
+          <div>
+            <div className="flex items-center gap-2 text-[#00003c] font-label text-xs uppercase font-bold tracking-wider mb-1">
+              <span className="material-symbols-outlined text-[18px]">verified_user</span>
+              <span>Executive Admin Control Portal</span>
             </div>
+            <h1 className="font-headline font-bold text-2xl md:text-3xl text-[#00003c]">Catalog &amp; Inventory Management</h1>
+            <p className="text-xs md:text-sm text-[#464653] mt-1">
+              Real-time synchronization with Neon Serverless PostgreSQL. Manage listings, prices, stock, and product details.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={openCreateModal}
+              className="bg-[#00003c] hover:bg-[#000080] text-white font-headline font-bold px-6 py-3 rounded-xl transition-all active:scale-95 shadow-md flex items-center gap-2 text-sm whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined">add_circle</span>
+              Add New Product
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={fetchAdminProducts}
-            className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all"
-            title="Refresh Database"
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin text-cyan-400' : ''} />
-          </button>
-          <button
-            onClick={openCreate}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-extrabold text-xs sm:text-sm hover:brightness-110 shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-1.5"
-          >
-            <Plus size={16} />
-            <span>Add New Tech</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Action Notification Toast */}
-      {actionMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-cyan-500 text-black font-bold text-xs sm:text-sm px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 animate-bounce">
-          <CheckCircle2 size={18} />
-          <span>{actionMessage}</span>
-        </div>
-      )}
-
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:px-8 py-8 space-y-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-1">
-            <div className="flex items-center justify-between text-zinc-500 text-xs font-semibold">
-              <span>TOTAL CATALOG</span>
-              <Package size={16} className="text-cyan-400" />
-            </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-white">{totalProducts}</div>
-            <div className="text-[11px] text-zinc-500">All electronics items</div>
+        {/* Analytics Overview Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white p-5 rounded-xl border border-[#c6c5d5] shadow-sm">
+            <span className="text-xs font-semibold text-[#464653] block mb-1">Total SKU Count</span>
+            <span className="font-headline font-bold text-2xl text-[#00003c]">{products.length} Items</span>
           </div>
-
-          <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-1">
-            <div className="flex items-center justify-between text-zinc-500 text-xs font-semibold">
-              <span>LIVE STOREFRONT</span>
-              <Eye size={16} className="text-green-400" />
-            </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-green-400">{listedCount}</div>
-            <div className="text-[11px] text-zinc-500">Currently visible to shoppers</div>
+          <div className="bg-white p-5 rounded-xl border border-[#c6c5d5] shadow-sm">
+            <span className="text-xs font-semibold text-[#464653] block mb-1">Active Storefront (Listed)</span>
+            <span className="font-headline font-bold text-2xl text-[#2E7D32]">{listedCount} Listed</span>
           </div>
-
-          <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-1">
-            <div className="flex items-center justify-between text-zinc-500 text-xs font-semibold">
-              <span>DELISTED / HIDDEN</span>
-              <EyeOff size={16} className="text-amber-400" />
-            </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-amber-400">{delistedCount}</div>
-            <div className="text-[11px] text-zinc-500">Hidden from storefront</div>
+          <div className="bg-white p-5 rounded-xl border border-[#c6c5d5] shadow-sm">
+            <span className="text-xs font-semibold text-[#464653] block mb-1">Hidden Catalog (Delisted)</span>
+            <span className="font-headline font-bold text-2xl text-[#D32F2F]">{delistedCount} Delisted</span>
           </div>
-
-          <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-1">
-            <div className="flex items-center justify-between text-zinc-500 text-xs font-semibold">
-              <span>INVENTORY VALUE</span>
-              <DollarSign size={16} className="text-blue-400" />
-            </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-white">${totalStockValue.toLocaleString()}</div>
-            <div className="text-[11px] text-zinc-500">Estimated stock valuation</div>
+          <div className="bg-white p-5 rounded-xl border border-[#c6c5d5] shadow-sm">
+            <span className="text-xs font-semibold text-[#464653] block mb-1">Total Inventory Valuation</span>
+            <span className="font-price font-bold text-xl md:text-2xl text-[#B87F00]">₦{totalValue.toLocaleString()}</span>
           </div>
         </div>
 
-        {/* Filter Toolbar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-zinc-900/40 p-4 rounded-2xl border border-zinc-800">
-          <div className="relative w-full md:w-80">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products by name or category..."
-              className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl py-2 pl-10 pr-4 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500"
-            />
-            <Search className="absolute left-3.5 top-2.5 text-zinc-500" size={16} />
-          </div>
-
-          <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-            {['All', 'Phones', 'Audio', 'Laptops', 'Wearables', 'Accessories'].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                  selectedCategory === cat
-                    ? 'bg-cyan-500 text-black shadow-md shadow-cyan-500/20'
-                    : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+        {/* Search & Filter Bar */}
+        <div className="mb-6 bg-white p-4 rounded-xl border border-[#c6c5d5] flex items-center gap-3">
+          <span className="material-symbols-outlined text-[#767684]">search</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search products by title, category, brand, or ID..."
+            className="w-full bg-transparent text-sm text-[#1c1b1b] placeholder-[#767684] outline-none"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="text-[#767684] hover:text-[#1c1b1b]">
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          )}
         </div>
 
-        {/* Products Table / Grid */}
-        <div className="bg-zinc-900/40 border border-zinc-800 rounded-3xl overflow-hidden shadow-xl">
-          <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
-            <h2 className="font-extrabold text-base text-white flex items-center gap-2">
-              <Layers size={18} className="text-cyan-400" />
-              <span>Product Inventory & Control Panel</span>
-            </h2>
-            <span className="text-xs text-zinc-500 font-medium">Click any row action to toggle status or edit details</span>
-          </div>
-
+        {/* Product Table */}
+        <div className="bg-white rounded-2xl border border-[#c6c5d5] overflow-hidden shadow-sm">
           {loading ? (
-            <div className="p-12 text-center text-zinc-500 text-sm">Loading database records...</div>
+            <div className="py-20 text-center space-y-3">
+              <span className="material-symbols-outlined animate-spin text-4xl text-[#00003c]">progress_activity</span>
+              <p className="text-sm text-[#464653] font-semibold">Loading admin catalog...</p>
+            </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="p-12 text-center space-y-2">
-              <AlertCircle size={32} className="text-zinc-600 mx-auto" />
-              <div className="font-bold text-white">No products found</div>
-              <div className="text-xs text-zinc-500">Try adjusting your filters or click "Add New Tech" to create one.</div>
+            <div className="py-16 text-center space-y-2">
+              <span className="material-symbols-outlined text-4xl text-[#c6c5d5]">inventory_2</span>
+              <p className="font-semibold text-[#00003c]">No products match your search</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-zinc-800 bg-zinc-900/60 text-[11px] font-extrabold text-zinc-400 uppercase tracking-wider">
-                    <th className="p-4">Product Info</th>
-                    <th className="p-4">Category</th>
-                    <th className="p-4">Price / Stock</th>
+                  <tr className="bg-[#f0edec] text-[#464653] font-label text-xs uppercase tracking-wider border-b border-[#c6c5d5]">
+                    <th className="p-4">Product Details</th>
+                    <th className="p-4">Category &amp; Brand</th>
+                    <th className="p-4">Price</th>
+                    <th className="p-4">Stock</th>
                     <th className="p-4">Status (List / Delist)</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/60 text-xs">
+                <tbody className="divide-y divide-[#ebe7e7] text-sm">
                   {filteredProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-zinc-900/60 transition-colors group">
-                      {/* Product */}
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={product.image || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=400&q=80'}
-                            alt={product.name}
-                            className="w-12 h-12 object-cover rounded-xl bg-zinc-800 border border-zinc-700/60 flex-shrink-0"
-                          />
-                          <div className="min-w-0">
-                            <div className="font-extrabold text-white text-sm truncate max-w-xs">{product.name}</div>
-                            <div className="text-zinc-500 truncate max-w-xs">{product.tagline || product.description}</div>
-                            {product.badge && (
-                              <span className="inline-block mt-1 px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-bold text-[9px] uppercase">
-                                {product.badge}
-                              </span>
-                            )}
-                          </div>
+                    <tr
+                      key={product.id}
+                      className={`hover:bg-[#f6f3f2] transition-colors ${!product.isListed ? 'opacity-60 bg-[#ebe7e7]/40' : ''}`}
+                    >
+                      <td className="p-4 flex items-center gap-3.5 min-w-[240px]">
+                        <div className="w-12 h-12 rounded-lg bg-[#f0edec] p-1.5 flex items-center justify-center flex-shrink-0">
+                          <img src={product.image} alt={product.name} className="w-full h-full object-contain mix-blend-multiply" />
+                        </div>
+                        <div>
+                          <span className="font-body font-bold text-[#00003c] block line-clamp-1">{product.name}</span>
+                          <span className="text-xs text-[#767684] block font-mono">ID: {product.id}</span>
                         </div>
                       </td>
-
-                      {/* Category */}
-                      <td className="p-4 font-semibold text-zinc-300">{product.category}</td>
-
-                      {/* Price & Stock */}
                       <td className="p-4">
-                        <div className="font-extrabold text-white text-sm">${product.price.toLocaleString()}</div>
-                        <div className="text-zinc-500">Stock: <span className="text-cyan-400 font-bold">{product.stock}</span></div>
+                        <span className="font-semibold text-[#1c1b1b] block">{product.category}</span>
+                        <span className="text-xs text-[#767684]">{product.brand || 'FleekTech'}</span>
                       </td>
-
-                      {/* List / Delist Toggle Button */}
+                      <td className="p-4 font-price font-bold text-[#B87F00] whitespace-nowrap">
+                        ₦{product.price.toLocaleString()}
+                      </td>
+                      <td className="p-4">
+                        <span className={`font-semibold px-2 py-0.5 rounded text-xs ${product.stock < 20 ? 'bg-[#D32F2F]/10 text-[#D32F2F]' : 'bg-[#2E7D32]/10 text-[#2E7D32]'}`}>
+                          {product.stock} units
+                        </span>
+                      </td>
                       <td className="p-4">
                         <button
                           onClick={() => handleToggleList(product)}
-                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-bold text-xs transition-all shadow-sm ${
+                          className={`px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm ${
                             product.isListed
-                              ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'
-                              : 'bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30'
+                              ? 'bg-[#2E7D32] text-white hover:bg-[#2E7D32]/90'
+                              : 'bg-[#767684] text-white hover:bg-[#767684]/90'
                           }`}
-                          title="Click to toggle visibility on storefront"
+                          title={product.isListed ? 'Click to Delist (Hide from store)' : 'Click to List (Show on store)'}
                         >
-                          {product.isListed ? (
-                            <>
-                              <Eye size={14} className="text-green-400 animate-pulse" />
-                              <span>LISTED (LIVE)</span>
-                            </>
-                          ) : (
-                            <>
-                              <EyeOff size={14} className="text-amber-400" />
-                              <span>DELISTED (HIDDEN)</span>
-                            </>
-                          )}
+                          <span className="material-symbols-outlined text-[16px]">
+                            {product.isListed ? 'visibility' : 'visibility_off'}
+                          </span>
+                          {product.isListed ? 'Listed (Active)' : 'Delisted (Hidden)'}
                         </button>
                       </td>
-
-                      {/* Actions */}
-                      <td className="p-4 text-right space-x-2">
-                        <button
-                          onClick={() => openEdit(product)}
-                          className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-cyan-500 hover:text-black text-zinc-300 font-bold transition-all inline-flex items-center gap-1 shadow-sm"
-                        >
-                          <Edit3 size={14} />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id, product.name)}
-                          className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-all inline-flex items-center justify-center"
-                          title="Delete completely"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                      <td className="p-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openEditModal(product)}
+                            className="px-3 py-1.5 rounded-lg border border-[#c6c5d5] bg-white text-[#00003c] font-semibold text-xs hover:border-[#00003c] flex items-center gap-1 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">edit</span>
+                            Edit Details
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id, product.name)}
+                            className="p-1.5 rounded-lg border border-[#D32F2F]/30 bg-[#D32F2F]/10 text-[#D32F2F] hover:bg-[#D32F2F] hover:text-white transition-colors"
+                            title="Delete permanently"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -429,172 +388,213 @@ export default function AdminPage() {
         </div>
       </main>
 
-      {/* Edit & Create Modal */}
-      {(isEditModalOpen || isCreateModalOpen) && currentProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-2xl w-full p-6 md:p-8 space-y-6 relative shadow-2xl my-8">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-              <h3 className="font-extrabold text-xl text-white flex items-center gap-2">
-                <Edit3 size={20} className="text-cyan-400" />
-                <span>{isEditModalOpen ? `Edit "${currentProduct.name}"` : 'Add New Tech Product'}</span>
-              </h3>
+      {/* Edit / Create Modal */}
+      {(isCreating || editingProduct) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1c1b1b]/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#fcf9f8] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#c6c5d5] p-6 md:p-8 relative">
+            <div className="flex items-center justify-between border-b border-[#c6c5d5] pb-4 mb-6">
+              <h2 className="font-headline font-bold text-xl text-[#00003c]">
+                {isCreating ? 'Add New Product to Catalog' : `Edit Product: ${editingProduct?.name}`}
+              </h2>
               <button
                 onClick={() => {
-                  setIsEditModalOpen(false);
-                  setIsCreateModalOpen(false);
+                  setIsCreating(false);
+                  setEditingProduct(null);
                 }}
-                className="p-2 rounded-full bg-zinc-800 text-zinc-400 hover:text-white"
+                className="p-1 rounded-full text-[#767684] hover:text-[#1c1b1b] hover:bg-[#ebe7e7]"
               >
-                <X size={18} />
+                <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            <form onSubmit={isEditModalOpen ? handleSaveEdit : handleSaveCreate} className="space-y-4 text-xs">
+            <form onSubmit={handleSave} className="space-y-4 text-sm">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="font-bold text-zinc-400">Product Name *</label>
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Product Name *</label>
                   <input
                     type="text"
                     required
-                    value={currentProduct.name || ''}
-                    onChange={(e) => setCurrentProduct({ ...currentProduct, name: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500"
-                    placeholder="e.g. FleekTech CyberPhone 17"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Brand *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formBrand}
+                    onChange={(e) => setFormBrand(e.target.value)}
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none"
+                  />
+                </div>
+              </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-zinc-400">Category *</label>
+              <div>
+                <label className="block text-xs font-bold text-[#00003c] mb-1">Tagline / Short Description *</label>
+                <input
+                  type="text"
+                  required
+                  value={formTagline}
+                  onChange={(e) => setFormTagline(e.target.value)}
+                  className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Price (₦) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={formPrice}
+                    onChange={(e) => setFormPrice(e.target.value)}
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none font-price font-bold text-[#B87F00]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Original Strike Price (₦)</label>
+                  <input
+                    type="number"
+                    value={formOriginalPrice}
+                    onChange={(e) => setFormOriginalPrice(e.target.value)}
+                    placeholder="Optional"
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Category *</label>
                   <select
-                    value={currentProduct.category || 'Phones'}
-                    onChange={(e) => setCurrentProduct({ ...currentProduct, category: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500"
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value)}
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none"
                   >
                     <option value="Phones">Phones</option>
-                    <option value="Audio">Audio</option>
                     <option value="Laptops">Laptops</option>
+                    <option value="Audio">Audio</option>
+                    <option value="Gaming">Gaming</option>
                     <option value="Wearables">Wearables</option>
-                    <option value="Accessories">Accessories</option>
+                    <option value="Cameras">Cameras</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <label className="font-bold text-zinc-400">Price ($) *</label>
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Stock Count *</label>
                   <input
                     type="number"
-                    step="0.01"
                     required
-                    value={currentProduct.price || 0}
-                    onChange={(e) => setCurrentProduct({ ...currentProduct, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500 font-mono"
+                    value={formStock}
+                    onChange={(e) => setFormStock(e.target.value)}
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none"
                   />
                 </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-zinc-400">Original Price ($)</label>
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Rating (1.0 - 5.0)</label>
                   <input
                     type="number"
-                    step="0.01"
-                    value={currentProduct.originalPrice || ''}
-                    onChange={(e) => setCurrentProduct({ ...currentProduct, originalPrice: e.target.value ? parseFloat(e.target.value) : undefined })}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500 font-mono"
-                    placeholder="Optional strike-through"
+                    step="0.1"
+                    min="1"
+                    max="5"
+                    value={formRating}
+                    onChange={(e) => setFormRating(e.target.value)}
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none"
                   />
                 </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-zinc-400">Stock Count</label>
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Reviews Count</label>
                   <input
                     type="number"
-                    value={currentProduct.stock || 0}
-                    onChange={(e) => setCurrentProduct({ ...currentProduct, stock: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500 font-mono"
+                    value={formReviewsCount}
+                    onChange={(e) => setFormReviewsCount(e.target.value)}
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="font-bold text-zinc-400">Image URL</label>
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Image URL *</label>
                   <input
                     type="url"
-                    value={currentProduct.image || ''}
-                    onChange={(e) => setCurrentProduct({ ...currentProduct, image: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500"
-                    placeholder="https://..."
+                    required
+                    value={formImage}
+                    onChange={(e) => setFormImage(e.target.value)}
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none text-xs"
                   />
                 </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-zinc-400">Badge (Optional)</label>
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Badge / Sale Tag</label>
                   <input
                     type="text"
-                    value={currentProduct.badge || ''}
-                    onChange={(e) => setCurrentProduct({ ...currentProduct, badge: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500"
-                    placeholder="NEW, SALE, HOT, BESTSELLER"
+                    value={formBadge}
+                    onChange={(e) => setFormBadge(e.target.value)}
+                    placeholder="e.g. -20%, Best Seller, New"
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-zinc-400">Tagline / Subtitle</label>
-                <input
-                  type="text"
-                  value={currentProduct.tagline || ''}
-                  onChange={(e) => setCurrentProduct({ ...currentProduct, tagline: e.target.value })}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500"
-                  placeholder="Short punchy feature summary"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-zinc-400">Full Description</label>
+              <div>
+                <label className="block text-xs font-bold text-[#00003c] mb-1">Full Description *</label>
                 <textarea
                   rows={3}
-                  value={currentProduct.description || ''}
-                  onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-cyan-500"
-                  placeholder="Detailed explanation of features and design..."
+                  required
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                  className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none text-xs"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-zinc-400">Specifications (JSON Format)</label>
-                <textarea
-                  rows={4}
-                  value={specsInput}
-                  onChange={(e) => setSpecsInput(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-2.5 text-cyan-300 font-mono focus:outline-none focus:border-cyan-500"
-                />
-                <p className="text-[10px] text-zinc-500">Must be valid JSON object with key-value pairs (e.g., &quot;Display&quot;: &quot;6.8 inch&quot;)</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Key Features (comma separated)</label>
+                  <input
+                    type="text"
+                    value={formFeatures}
+                    onChange={(e) => setFormFeatures(e.target.value)}
+                    placeholder="Titanium Build, AI Chip, Fast Charging"
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#00003c] mb-1">Specifications (JSON format) *</label>
+                  <textarea
+                    rows={3}
+                    value={formSpecs}
+                    onChange={(e) => setFormSpecs(e.target.value)}
+                    className="w-full bg-white border border-[#c6c5d5] rounded-lg p-2.5 text-[#1c1b1b] focus:ring-2 focus:ring-[#00003c] outline-none font-mono text-xs"
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center gap-3 pt-4 border-t border-zinc-800">
+              <div className="pt-4 border-t border-[#c6c5d5] flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => {
-                    setIsEditModalOpen(false);
-                    setIsCreateModalOpen(false);
+                    setIsCreating(false);
+                    setEditingProduct(null);
                   }}
-                  className="px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold"
+                  className="px-5 py-2.5 rounded-xl border border-[#c6c5d5] text-[#464653] font-semibold hover:bg-[#ebe7e7] transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-extrabold hover:brightness-110 shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2"
+                  className="px-6 py-2.5 rounded-xl bg-[#00003c] hover:bg-[#000080] text-white font-headline font-bold transition-all active:scale-95 shadow-md flex items-center gap-2"
                 >
-                  <Save size={16} />
-                  <span>{isEditModalOpen ? 'Save Changes' : 'Create Product'}</span>
+                  <span className="material-symbols-outlined text-[18px]">save</span>
+                  {isCreating ? 'Create Product' : 'Save Changes'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      <Footer />
     </div>
   );
 }

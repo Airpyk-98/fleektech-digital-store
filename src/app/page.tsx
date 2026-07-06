@@ -1,408 +1,602 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
-import { CartDrawer } from '@/components/CartDrawer';
-import { CartProvider, useCart } from '@/lib/CartContext';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import CartDrawer from '@/components/CartDrawer';
+import { useCart } from '@/context/CartContext';
 import { Product } from '@/lib/db';
-import { ShoppingBag, Star, Sparkles, ShieldCheck, Zap, ArrowRight, Eye, X, Check, Flame, Award, Clock, Search } from 'lucide-react';
 
-const StorefrontContent: React.FC = () => {
-  const { addToCart } = useCart();
+const CATEGORIES = [
+  { name: 'All', icon: 'grid_view' },
+  { name: 'Phones', icon: 'smartphone' },
+  { name: 'Laptops', icon: 'laptop' },
+  { name: 'Audio', icon: 'headphones' },
+  { name: 'Gaming', icon: 'sports_esports' },
+  { name: 'Wearables', icon: 'watch' },
+  { name: 'Cameras', icon: 'camera' },
+];
+
+const BRAND_FILTERS = ['All Brands', 'Apple', 'Samsung', 'Google', 'Xiaomi', 'Sony', 'Dell', 'Nintendo'];
+
+export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedBrand, setSelectedBrand] = useState('All Brands');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'popularity' | 'price-low' | 'price-high'>('popularity');
+  const [wishlist, setWishlist] = useState<Record<string, boolean>>({});
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 36, seconds: 9 });
 
-  // Countdown timer for Flash Sale
-  const [timeLeft, setTimeLeft] = useState({ hours: 4, minutes: 28, seconds: 53 });
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        return { hours: 4, minutes: 30, seconds: 0 };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
+  // Countdown timer for Flash Sales
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        let { hours, minutes, seconds } = prev;
+        seconds--;
+        if (seconds < 0) {
+          seconds = 59;
+          minutes--;
+          if (minutes < 0) {
+            minutes = 59;
+            hours--;
+            if (hours < 0) hours = 23;
+          }
+        }
+        return { hours, minutes, seconds };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const fetchProducts = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       const res = await fetch('/api/products');
-      const data = await res.json();
-      if (data.success) {
-        setProducts(data.products);
+      if (res.ok) {
+        const data = await res.json();
+        setProducts(data);
       }
     } catch (err) {
-      console.error('Failed to fetch products:', err);
+      console.error('Error fetching products:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleWishlist = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setWishlist((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Filter and sort products
   const filteredProducts = products.filter((p) => {
-    const matchesCat = selectedCategory === 'All' || p.category.toLowerCase() === selectedCategory.toLowerCase();
-    const matchesSearch = !searchQuery || 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      p.tagline?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCat && matchesSearch;
+    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+    const matchesBrand = selectedBrand === 'All Brands' || p.brand?.toLowerCase() === selectedBrand.toLowerCase() || p.name.toLowerCase().includes(selectedBrand.toLowerCase());
+    const matchesSearch =
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.tagline.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.brand?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesBrand && matchesSearch;
   });
 
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (sortBy === 'price-low') return a.price - b.price;
+    if (sortBy === 'price-high') return b.price - a.price;
+    return b.rating - a.rating; // popularity / rating
+  });
+
+  const flashSaleProducts = products.filter((p) => p.badge || p.originalPrice).slice(0, 4);
+
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-950 text-white selection:bg-cyan-500 selection:text-black">
-      <Navbar
-        onSearch={setSearchQuery}
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-      />
+    <div className="min-h-screen flex flex-col bg-[#fcf9f8]">
+      <Navbar onSearch={setSearchQuery} onSelectCategory={setSelectedCategory} />
+      <CartDrawer />
 
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden pt-8 pb-16 md:py-24 px-4 sm:px-6 lg:px-8 border-b border-zinc-900">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(6,182,212,0.15),rgba(255,255,255,0))] pointer-events-none" />
-          
-          <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-semibold text-xs tracking-wide">
-                <Sparkles size={14} className="animate-spin" />
-                <span>TECH-FORWARD ELECTRONICS VANGUARD</span>
-              </div>
-
-              <h1 className="font-extrabold text-4xl sm:text-6xl lg:text-7xl tracking-tight leading-none">
-                Engineered For <br />
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400">
-                  The Next Frontier.
+      {/* Main Storefront Canvas */}
+      <main className="flex-1 pt-16 pb-24 md:pl-16">
+        {/* Hero Banner - Stitch UI Guide */}
+        {selectedCategory === 'All' && !searchQuery && (
+          <section className="p-4 md:p-8 max-w-7xl mx-auto">
+            <div className="relative overflow-hidden rounded-2xl h-[360px] md:h-[480px] bg-[#00003c] group shadow-xl">
+              <div
+                className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                style={{
+                  backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuByA-fKAQ1AR69YF5A3rbd1J-QOecf2m_0e4VOmixxx8kKFTS4f0tthv7TSbX4N3KqjBN40NWBzP20Yfiw2SpB-rSDta9iOLGiaHG45_s7Txo4YqawpSdynCnrIwtAfQIgvoAJJq5RTCisgDodlNy2D5NYGdkQIN-wP-oLoACVKgLYUe0Ya87b5MAwRamX8zjzSMK6guRwb2btgFJHLFvc0vh9ul6hxUZeEDp88K-MnLK-VSVqdY38T')`,
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00003c]/95 via-[#00003c]/60 to-transparent z-10 flex flex-col justify-center p-6 md:p-14">
+                <span className="text-[#ffa504] font-label tracking-widest uppercase mb-2 text-xs md:text-sm font-bold">
+                  New Arrival
                 </span>
-              </h1>
-
-              <p className="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal">
-                Discover aerospace-grade titanium smartphones, studio-tuned beryllium acoustic headphones, and neural AI laptops built for creators who demand absolute perfection.
-              </p>
-
-              {/* Flash Sale Banner in Hero */}
-              <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-xl mx-auto lg:mx-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-                    <Flame size={22} />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-xs font-bold text-amber-400 uppercase tracking-wider">Flash Sale Ends In</div>
-                    <div className="text-sm font-semibold text-zinc-300">Up to $200 off selected Titanium gear</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 font-mono font-bold text-lg bg-zinc-950 px-3 py-1.5 rounded-xl border border-zinc-800 text-cyan-400">
-                  <Clock size={16} className="text-zinc-500 mr-1" />
-                  <span>{String(timeLeft.hours).padStart(2, '0')}</span>:
-                  <span>{String(timeLeft.minutes).padStart(2, '0')}</span>:
-                  <span>{String(timeLeft.seconds).padStart(2, '0')}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                <button
-                  onClick={() => {
-                    const el = document.getElementById('catalog');
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="px-8 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-extrabold text-sm sm:text-base hover:brightness-110 shadow-xl shadow-cyan-500/25 transition-all flex items-center gap-2"
-                >
-                  <span>Shop The Catalog</span>
-                  <ArrowRight size={18} />
-                </button>
-                <a
-                  href="/admin"
-                  className="px-6 py-4 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/80 text-white font-bold text-sm sm:text-base transition-all flex items-center gap-2"
-                >
-                  <ShieldCheck size={18} className="text-cyan-400" />
-                  <span>Admin Portal</span>
-                </a>
-              </div>
-            </div>
-
-            {/* Hero Visual Mockup Card */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative mx-auto max-w-sm rounded-3xl bg-gradient-to-b from-zinc-800 to-zinc-900 p-1 shadow-2xl shadow-cyan-500/10">
-                <div className="rounded-[22px] bg-zinc-950 p-6 space-y-6 overflow-hidden relative">
-                  <div className="absolute -right-10 -top-10 w-40 h-40 bg-cyan-500/20 rounded-full blur-3xl" />
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-full bg-cyan-500 text-black font-extrabold text-[11px] tracking-wider uppercase">
-                      FEATURED DROP
-                    </span>
-                    <div className="flex items-center gap-1 text-amber-400 text-sm font-bold">
-                      <Star size={16} className="fill-amber-400" />
-                      <span>4.9</span>
-                    </div>
-                  </div>
-
-                  <div className="aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800/80 relative group">
-                    <img
-                      src="https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=800&q=80"
-                      alt="Titan Pro"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="text-xs text-cyan-400 font-semibold uppercase tracking-wider">Smartphones • Titanium Series</div>
-                    <h3 className="font-extrabold text-2xl text-white">FleekTech Titan Pro</h3>
-                    <p className="text-xs text-zinc-400 line-clamp-2">
-                      Aerospace-grade titanium casing with 200MP neural camera array and satellite emergency sync.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-zinc-900">
-                    <div>
-                      <div className="text-xs text-zinc-500 line-through font-medium">$1,399</div>
-                      <div className="text-2xl font-extrabold text-white">$1,199</div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const prod = products.find(p => p.id === 'prod-1') || {
-                          id: 'prod-1',
-                          name: 'FleekTech Titan Pro Phone',
-                          tagline: 'Next-Gen AI & Titanium Build',
-                          price: 1199,
-                          category: 'Phones',
-                          image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=800&q=80',
-                          rating: 4.9,
-                          reviewsCount: 328,
-                          stock: 45,
-                          isListed: true,
-                          description: 'Aerospace titanium phone.',
-                          specs: {}
-                        };
-                        addToCart(prod);
-                      }}
-                      className="px-5 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold text-sm transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-2"
-                    >
-                      <ShoppingBag size={18} />
-                      <span>Add To Bag</span>
-                    </button>
-                  </div>
+                <h1 className="font-display text-white text-3xl md:text-5xl lg:text-6xl font-bold max-w-lg mb-4 leading-tight">
+                  iPhone 15 Pro &amp; MacBook M3
+                </h1>
+                <p className="text-[#777eea] font-body text-sm md:text-lg mb-8 max-w-md">
+                  Experience the pinnacle of performance with exclusive launch deals up to 15% off.
+                </p>
+                <div>
+                  <button
+                    onClick={() => setSelectedCategory('Phones')}
+                    className="bg-[#ffa504] text-[#684100] font-headline font-bold px-8 py-3.5 rounded-xl hover:opacity-90 transition-all active:scale-95 shadow-lg"
+                  >
+                    Shop Now
+                  </button>
                 </div>
               </div>
             </div>
+          </section>
+        )}
+
+        {/* Categories Horizontal Scroll - Stitch UI Guide */}
+        <section className="py-6 max-w-7xl mx-auto overflow-hidden">
+          <div className="px-4 md:px-8 mb-4 flex justify-between items-center">
+            <h2 className="font-headline font-bold text-xl md:text-2xl text-[#00003c]">Browse Categories</h2>
+            {selectedCategory !== 'All' && (
+              <button
+                onClick={() => setSelectedCategory('All')}
+                className="text-[#855400] font-label text-sm font-semibold hover:underline"
+              >
+                View All Categories
+              </button>
+            )}
+          </div>
+          <div className="flex gap-4 md:gap-6 overflow-x-auto px-4 md:px-8 hide-scrollbar snap-x py-2">
+            {CATEGORIES.map((cat) => (
+              <div
+                key={cat.name}
+                onClick={() => setSelectedCategory(cat.name)}
+                className="flex flex-col items-center gap-2 snap-start min-w-[80px] cursor-pointer group"
+              >
+                <div
+                  className={`w-16 h-16 rounded-full flex items-center justify-center border transition-all ${
+                    selectedCategory === cat.name
+                      ? 'bg-[#00003c] border-[#ffa504] text-white shadow-md scale-105'
+                      : 'bg-[#ebe7e7] border-[#c6c5d5] text-[#00003c] group-hover:border-[#855400] group-hover:bg-white'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-3xl">{cat.icon}</span>
+                </div>
+                <span
+                  className={`font-label text-xs ${
+                    selectedCategory === cat.name ? 'text-[#00003c] font-bold' : 'text-[#464653]'
+                  }`}
+                >
+                  {cat.name}
+                </span>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* Catalog Section */}
-        <section id="catalog" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-900 pb-6">
-            <div>
-              <div className="text-xs font-bold text-cyan-400 uppercase tracking-widest mb-1">Our Catalog</div>
-              <h2 className="font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
-                {selectedCategory === 'All' ? 'All Tech Equipment' : `${selectedCategory} Collection`}
-              </h2>
-            </div>
-            <div className="text-xs text-zinc-500 font-medium">
-              Showing <span className="text-cyan-400 font-bold">{filteredProducts.length}</span> listed products
-            </div>
-          </div>
-
-          {/* Product Grid */}
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-12">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="bg-zinc-900/60 rounded-3xl h-96 animate-pulse border border-zinc-800/60 p-6 flex flex-col justify-between">
-                  <div className="w-full h-48 bg-zinc-800 rounded-2xl mb-4" />
-                  <div className="space-y-2">
-                    <div className="h-4 bg-zinc-800 rounded w-1/3" />
-                    <div className="h-6 bg-zinc-800 rounded w-3/4" />
-                    <div className="h-4 bg-zinc-800 rounded w-full" />
+        {/* Flash Sales Section - Stitch UI Guide */}
+        {selectedCategory === 'All' && !searchQuery && flashSaleProducts.length > 0 && (
+          <section className="bg-[#000080]/10 py-10 my-6 max-w-7xl mx-auto rounded-none md:rounded-2xl">
+            <div className="px-4 md:px-8 mb-6 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-[#ffa504] text-3xl fill-icon">bolt</span>
+                <h2 className="font-headline font-bold text-xl md:text-2xl text-[#00003c]">Flash Sales</h2>
+                <div className="flex items-center gap-1.5 ml-2" id="flash-sale-timer">
+                  <div className="bg-[#00003c] text-white font-bold px-2.5 py-1 rounded text-sm shadow">
+                    {String(timeLeft.hours).padStart(2, '0')}
                   </div>
-                  <div className="h-10 bg-zinc-800 rounded-xl w-full mt-4" />
+                  <span className="text-[#00003c] font-bold">:</span>
+                  <div className="bg-[#00003c] text-white font-bold px-2.5 py-1 rounded text-sm shadow">
+                    {String(timeLeft.minutes).padStart(2, '0')}
+                  </div>
+                  <span className="text-[#00003c] font-bold">:</span>
+                  <div className="bg-[#00003c] text-white font-bold px-2.5 py-1 rounded text-sm shadow">
+                    {String(timeLeft.seconds).padStart(2, '0')}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedCategory('Phones')}
+                className="text-[#00003c] font-bold text-sm hover:underline"
+              >
+                See All Deals &rarr;
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 md:px-8">
+              {flashSaleProducts.map((product) => (
+                <div
+                  key={`flash-${product.id}`}
+                  onClick={() => setSelectedProduct(product)}
+                  className="bg-white border border-[#c6c5d5] rounded-xl overflow-hidden flex flex-col group hover:shadow-xl transition-all cursor-pointer"
+                >
+                  <div className="relative aspect-square bg-[#fcf9f8] p-4">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="object-contain w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-500"
+                    />
+                    {product.badge && (
+                      <div className="absolute top-2 left-2 bg-[#D32F2F] text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow">
+                        {product.badge}
+                      </div>
+                    )}
+                    <button
+                      onClick={(e) => toggleWishlist(product.id, e)}
+                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 shadow flex items-center justify-center text-[#00003c] hover:text-[#D32F2F] transition-colors"
+                    >
+                      <span className={`material-symbols-outlined text-lg ${wishlist[product.id] ? 'fill-icon text-[#D32F2F]' : ''}`}>
+                        favorite
+                      </span>
+                    </button>
+                  </div>
+                  <div className="p-3.5 flex flex-col flex-1 justify-between">
+                    <div>
+                      <span className="font-label text-[10px] text-[#464653] uppercase font-semibold">
+                        {product.brand || 'FleekTech'}
+                      </span>
+                      <h3 className="font-body font-semibold text-sm text-[#1c1b1b] line-clamp-2 mt-0.5 mb-2 group-hover:text-[#00003c]">
+                        {product.name}
+                      </h3>
+                    </div>
+                    <div>
+                      <div className="flex items-baseline gap-2 mb-3">
+                        <span className="font-price font-bold text-base text-[#B87F00]">
+                          ₦{product.price.toLocaleString()}
+                        </span>
+                        {product.originalPrice && (
+                          <span className="text-xs text-[#767684] line-through">
+                            ₦{product.originalPrice.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToCart(product);
+                        }}
+                        className="w-full py-2 border border-[#00003c] text-[#00003c] font-bold rounded-lg hover:bg-[#00003c] hover:text-white transition-colors text-xs flex items-center justify-center gap-1.5"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+                        Add to Cart
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="py-24 text-center space-y-4 max-w-md mx-auto">
-              <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-600 mx-auto">
-                <Search size={32} />
-              </div>
-              <h3 className="font-bold text-xl text-white">No products found</h3>
-              <p className="text-sm text-zinc-500">
-                We couldn't find any items matching "{searchQuery}" in {selectedCategory}. Try adjusting your search query or check back later!
+          </section>
+        )}
+
+        {/* Category Header & Controls - Stitch UI Guide */}
+        <section className="px-4 md:px-8 mb-6 max-w-7xl mx-auto mt-8">
+          <div className="flex justify-between items-end mb-4">
+            <div>
+              <nav className="text-[#464653] font-label text-xs mb-1">
+                Home / Categories / <span className="text-[#00003c] font-bold">{selectedCategory}</span>
+              </nav>
+              <h2 className="font-headline font-bold text-2xl md:text-3xl text-[#00003c]">
+                {selectedCategory === 'All' ? 'Full Catalog' : selectedCategory}
+              </h2>
+            </div>
+            <div className="text-[#464653] font-body text-xs md:text-sm font-semibold">
+              {sortedProducts.length} {sortedProducts.length === 1 ? 'Product' : 'Products'} Found
+            </div>
+          </div>
+
+          {/* Filter / Sort / Brand Pills */}
+          <div className="flex gap-2.5 overflow-x-auto hide-scrollbar py-2 items-center">
+            <div className="flex items-center gap-1 bg-white border border-[#c6c5d5] rounded-lg px-3 py-1.5 font-label text-xs text-[#00003c]">
+              <span className="material-symbols-outlined text-[16px]">tune</span>
+              <span>Filter:</span>
+            </div>
+
+            <button
+              onClick={() => {
+                const nextSort =
+                  sortBy === 'popularity'
+                    ? 'price-low'
+                    : sortBy === 'price-low'
+                    ? 'price-high'
+                    : 'popularity';
+                setSortBy(nextSort);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#c6c5d5] rounded-lg font-label text-xs text-[#00003c] whitespace-nowrap active:scale-95 hover:border-[#00003c] transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px]">swap_vert</span>
+              <span>
+                Sort by:{' '}
+                {sortBy === 'popularity'
+                  ? 'Popularity'
+                  : sortBy === 'price-low'
+                  ? 'Price: Low to High'
+                  : 'Price: High to Low'}
+              </span>
+            </button>
+
+            <div className="h-6 w-[1px] bg-[#c6c5d5] mx-1"></div>
+
+            {BRAND_FILTERS.map((brand) => (
+              <button
+                key={brand}
+                onClick={() => setSelectedBrand(brand)}
+                className={`px-3.5 py-1.5 rounded-lg font-label text-xs whitespace-nowrap transition-all ${
+                  selectedBrand === brand
+                    ? 'bg-[#ffa504] text-[#684100] font-bold shadow-sm'
+                    : 'bg-white border border-[#c6c5d5] text-[#464653] hover:border-[#00003c]'
+                }`}
+              >
+                {brand}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Product Grid - Stitch UI Guide (2-column mobile, 4-column tablet, 6-column desktop) */}
+        <section className="px-4 md:px-8 max-w-7xl mx-auto">
+          {loading ? (
+            <div className="py-24 flex flex-col items-center justify-center gap-3">
+              <span className="material-symbols-outlined animate-spin text-4xl text-[#00003c]">progress_activity</span>
+              <p className="text-sm text-[#464653] font-semibold">Loading FleekTech catalog from Neon PostgreSQL...</p>
+            </div>
+          ) : sortedProducts.length === 0 ? (
+            <div className="py-20 text-center bg-white rounded-2xl border border-[#c6c5d5] p-8 max-w-lg mx-auto my-8">
+              <span className="material-symbols-outlined text-5xl text-[#c6c5d5] mb-2">search_off</span>
+              <h3 className="font-headline font-bold text-lg text-[#00003c]">No products found</h3>
+              <p className="text-xs text-[#464653] mt-1 mb-4">
+                We couldn&apos;t find any items matching your filter or search criteria.
               </p>
               <button
                 onClick={() => {
                   setSelectedCategory('All');
+                  setSelectedBrand('All Brands');
                   setSearchQuery('');
                 }}
-                className="px-6 py-2 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs"
+                className="bg-[#00003c] text-white px-5 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-all"
               >
-                Reset Filters
+                Reset All Filters
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
+            <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-4">
+              {sortedProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="group bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800/80 hover:border-cyan-500/40 rounded-3xl p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/10 relative overflow-hidden"
+                  onClick={() => setSelectedProduct(product)}
+                  className="group relative flex flex-col bg-white border border-[#c6c5d5] rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer"
                 >
-                  {/* Top Badges */}
-                  <div className="flex items-center justify-between z-10 mb-3">
-                    {product.badge ? (
-                      <span className={`px-2.5 py-0.5 rounded-full font-extrabold text-[10px] tracking-wider uppercase ${
-                        product.badge === 'NEW' ? 'bg-cyan-500 text-black' :
-                        product.badge === 'HOT' ? 'bg-amber-500 text-black' :
-                        product.badge === 'SALE' ? 'bg-red-500 text-white' :
-                        'bg-blue-600 text-white'
-                      }`}>
-                        {product.badge}
-                      </span>
-                    ) : <span />}
-                    <div className="flex items-center gap-1 text-amber-400 text-xs font-bold bg-zinc-950/80 px-2 py-1 rounded-lg border border-zinc-800">
-                      <Star size={13} className="fill-amber-400" />
-                      <span>{product.rating}</span>
-                      <span className="text-zinc-600">({product.reviewsCount})</span>
+                  {product.badge && (
+                    <div className="absolute top-2 left-2 z-10 px-2.5 py-0.5 bg-[#ffa504] text-[#684100] font-label text-[10px] rounded-sm uppercase tracking-wider font-bold shadow">
+                      {product.badge}
                     </div>
-                  </div>
-
-                  {/* Product Image */}
-                  <div
-                    onClick={() => setSelectedProduct(product)}
-                    className="aspect-square rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800/60 relative cursor-pointer mb-4 group-hover:border-zinc-700 transition-all"
+                  )}
+                  <button
+                    onClick={(e) => toggleWishlist(product.id, e)}
+                    className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/90 shadow flex items-center justify-center text-[#464653] hover:text-[#D32F2F] transition-colors"
                   >
+                    <span className={`material-symbols-outlined text-[18px] ${wishlist[product.id] ? 'fill-icon text-[#D32F2F]' : ''}`}>
+                      favorite
+                    </span>
+                  </button>
+                  <div className="aspect-square bg-[#fcf9f8] flex items-center justify-center p-4">
                     <img
-                      src={product.image || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=400&q=80'}
+                      src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="px-3 py-1.5 rounded-full bg-white/90 text-black font-bold text-xs flex items-center gap-1 shadow-lg">
-                        <Eye size={14} /> Quick View
-                      </span>
-                    </div>
                   </div>
-
-                  {/* Product Info */}
-                  <div className="space-y-1.5 flex-1 mb-4">
-                    <div className="text-[11px] font-semibold text-cyan-400 uppercase tracking-wider">{product.category}</div>
-                    <h3 
-                      onClick={() => setSelectedProduct(product)}
-                      className="font-extrabold text-base text-white group-hover:text-cyan-300 transition-colors cursor-pointer line-clamp-1"
-                    >
-                      {product.name}
-                    </h3>
-                    <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
-                      {product.tagline || product.description}
-                    </p>
-                  </div>
-
-                  {/* Price & Action */}
-                  <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between gap-2">
+                  <div className="p-3.5 flex flex-col flex-grow justify-between">
                     <div>
-                      {product.originalPrice && (
-                        <div className="text-[11px] text-zinc-500 line-through font-medium">
-                          ${product.originalPrice.toLocaleString()}
+                      <span className="font-label text-[11px] text-[#464653] uppercase font-semibold">
+                        {product.brand || 'FleekTech'}
+                      </span>
+                      <h3 className="font-body font-semibold text-sm text-[#00003c] line-clamp-2 min-h-[40px] mt-0.5 mb-1.5 group-hover:underline">
+                        {product.name}
+                      </h3>
+                      <div className="flex items-center gap-1 mb-3">
+                        <div className="flex text-[#B87F00]">
+                          <span className="material-symbols-outlined text-[14px] fill-icon">star</span>
+                          <span className="material-symbols-outlined text-[14px] fill-icon">star</span>
+                          <span className="material-symbols-outlined text-[14px] fill-icon">star</span>
+                          <span className="material-symbols-outlined text-[14px] fill-icon">star</span>
+                          <span className="material-symbols-outlined text-[14px] fill-icon">
+                            {product.rating >= 4.9 ? 'star' : 'star_half'}
+                          </span>
                         </div>
-                      )}
-                      <div className="text-lg font-extrabold text-white">
-                        ${product.price.toLocaleString()}
+                        <span className="font-body text-[11px] text-[#464653]">({product.reviewsCount})</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => addToCart(product)}
-                      className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-cyan-500 hover:text-black text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
-                    >
-                      <ShoppingBag size={15} />
-                      <span>Add</span>
-                    </button>
+                    <div className="mt-auto flex justify-between items-center pt-2.5 border-t border-[#f0edec]">
+                      <div>
+                        <span className="font-price font-bold text-base md:text-lg text-[#00003c]">
+                          ₦{product.price.toLocaleString()}
+                        </span>
+                        {product.originalPrice && (
+                          <span className="block text-[11px] text-[#767684] line-through">
+                            ₦{product.originalPrice.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToCart(product);
+                        }}
+                        className="h-9 w-9 bg-[#00003c] hover:bg-[#000080] rounded-full flex items-center justify-center text-white active:scale-90 transition-transform shadow"
+                        title="Add to cart"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">shopping_cart</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </section>
+
+        {/* Top Brands Section - Stitch UI Guide */}
+        <section className="py-12 max-w-7xl mx-auto px-4 md:px-8 mt-8">
+          <div className="mb-6">
+            <h2 className="font-headline font-bold text-xl md:text-2xl text-[#00003c]">Top Brands</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div
+              onClick={() => setSelectedBrand('Apple')}
+              className="aspect-[3/2] bg-white border border-[#c6c5d5] rounded-xl flex items-center justify-center p-6 hover:shadow-md hover:border-[#00003c] transition-all cursor-pointer group"
+            >
+              <img
+                className="h-12 w-auto object-contain group-hover:scale-105 transition-transform"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBS_flJQPe1My6SNxJC7cRepex8nodErJp4nV5O8K-045PY1Tu54AU6bcNna8gwOx9pBwS3sazwbpvWWUFCb6XYsymqPAGhiZOoenbJBQiJ9G0c_5p7Okfc2Sa9qsK51i7ba8y-zn-2LcVe6uQPKZltjstcbeNdGwZimXIQYJPVk11S9TjTRId_iF6VFor5-Ml6Bz08M1vd1TsFZxWx43Y6IKYxeGCDeKkV9T2F9NQfjWRXNtMt8dOU"
+                alt="Apple"
+              />
+            </div>
+            <div
+              onClick={() => setSelectedBrand('Samsung')}
+              className="aspect-[3/2] bg-white border border-[#c6c5d5] rounded-xl flex items-center justify-center p-6 hover:shadow-md hover:border-[#00003c] transition-all cursor-pointer group"
+            >
+              <img
+                className="h-8 w-auto object-contain group-hover:scale-105 transition-transform"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6k2-uvAjzen4269mb5yZGu08Ivfspl-7WM04IGd_Q7cn_tcNzQdHvIBBKhVdLDEKFDMys2PfzjOIOe1nN84g_zsbajlVdHIBJ8ToqkjhgyIM_IrW_qGP2FPqik_5YrWbIsQwYnYnnt2KV_BqcYEM322DIW4C4R-G84x20z77c-QFkZZRfD4ALzs0YDLO1ZCc-I2pNCB8rMEwSU8S8eNxfYQ6I-2j2auD9Q4r6IQg9jN6zspSEbOt-"
+                alt="Samsung"
+              />
+            </div>
+            <div
+              onClick={() => setSelectedBrand('Dell')}
+              className="aspect-[3/2] bg-white border border-[#c6c5d5] rounded-xl flex items-center justify-center p-6 hover:shadow-md hover:border-[#00003c] transition-all cursor-pointer group"
+            >
+              <img
+                className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDL8-HXg-pcCyc94XNcduuptqwjHW6VFEDfAd9CEmmjN98UEtW1tMmVzwcmcLJfw9jp7Ry3ylFqqaxGklgJP18OZ5gknYZxPN2aBKXNrJyiRNl6-5tQebNYZ-tP4RQ4kN98O4aEhId7hSLhcg3_iaUDGFZF7vBLoB1ndiKz9O3lPXbf7Q1wS9CTuGIArH9pgv0-dm7dRnpBvQ2VjiazqaKbs9qyncMNJc8WTDhp4SvcY7ckSytYBuah"
+                alt="Dell"
+              />
+            </div>
+            <div
+              onClick={() => setSelectedBrand('All Brands')}
+              className="aspect-[3/2] bg-white border border-[#c6c5d5] rounded-xl flex items-center justify-center p-6 hover:shadow-md hover:border-[#00003c] transition-all cursor-pointer group"
+            >
+              <img
+                className="h-12 w-auto object-contain group-hover:scale-105 transition-transform"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTzsmomKNyE5lbFEZgNT3A5qL3QDX9MUOyedo1So5A9uhqli7mWvgnIw2cxOKxFlTR2Y867WSsCcmvU7p-097gxzDsykdsP7t_PwXIl6wH9zIpGdaSW_1p_GtM1jJoGGLcOBaVnRF4Dshym_QS-RQPlZo3_ESvODRoxjPFQiZDDz7KVQZUxpgXkz3Qd1o2FONtIv4FiApCuqfxpoxjkBzDpngHEQSSC0sxSDetK1dNJzMQSEYCgaOT"
+                alt="HP"
+              />
+            </div>
+          </div>
+        </section>
       </main>
 
-      {/* Quick View Modal */}
+      {/* Product Detail Modal - Stitch UI Guide Screen 5 */}
       {selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 space-y-6 relative shadow-2xl animate-scaleUp">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1c1b1b]/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#fcf9f8] rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#c6c5d5] flex flex-col md:flex-row relative">
             <button
               onClick={() => setSelectedProduct(null)}
-              className="absolute top-6 right-6 p-2 rounded-full bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all"
+              className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/80 text-[#1c1b1b] hover:bg-[#ebe7e7] transition-colors shadow"
             >
-              <X size={20} />
+              <span className="material-symbols-outlined">close</span>
             </button>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              <div className="aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800">
-                <img
-                  src={selectedProduct.image || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=800&q=80'}
-                  alt={selectedProduct.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+            {/* Product Image */}
+            <div className="md:w-1/2 bg-white p-8 flex items-center justify-center border-b md:border-b-0 md:border-r border-[#c6c5d5] relative min-h-[300px]">
+              <img
+                src={selectedProduct.image}
+                alt={selectedProduct.name}
+                className="w-full h-auto max-h-[350px] object-contain mix-blend-multiply"
+              />
+              {selectedProduct.badge && (
+                <div className="absolute top-4 left-4 bg-[#ffa504] text-[#684100] font-bold px-3 py-1 rounded-md text-xs shadow">
+                  {selectedProduct.badge}
+                </div>
+              )}
+            </div>
 
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <div className="text-xs font-bold text-cyan-400 uppercase tracking-wider">{selectedProduct.category}</div>
-                  <h3 className="font-extrabold text-2xl text-white">{selectedProduct.name}</h3>
-                  <div className="flex items-center gap-2 pt-1">
-                    <div className="flex items-center gap-1 text-amber-400 font-bold text-sm">
-                      <Star size={16} className="fill-amber-400" />
-                      <span>{selectedProduct.rating}</span>
-                    </div>
-                    <span className="text-zinc-600">•</span>
-                    <span className="text-xs text-zinc-400">{selectedProduct.reviewsCount} verified reviews</span>
+            {/* Product Info */}
+            <div className="md:w-1/2 p-6 md:p-8 flex flex-col justify-between space-y-6">
+              <div>
+                <div className="flex items-center justify-between text-xs text-[#464653] font-semibold uppercase mb-1">
+                  <span>{selectedProduct.brand || 'FleekTech'} &bull; {selectedProduct.category}</span>
+                  <span className="text-[#2E7D32] font-bold">In Stock ({selectedProduct.stock})</span>
+                </div>
+                <h2 className="font-headline font-bold text-2xl text-[#00003c] mb-2">{selectedProduct.name}</h2>
+                <p className="text-sm text-[#464653] mb-4">{selectedProduct.tagline}</p>
+
+                <div className="flex items-center gap-2 mb-4 bg-[#f0edec] p-2.5 rounded-lg w-fit">
+                  <div className="flex text-[#B87F00]">
+                    <span className="material-symbols-outlined text-[18px] fill-icon">star</span>
+                    <span className="material-symbols-outlined text-[18px] fill-icon">star</span>
+                    <span className="material-symbols-outlined text-[18px] fill-icon">star</span>
+                    <span className="material-symbols-outlined text-[18px] fill-icon">star</span>
+                    <span className="material-symbols-outlined text-[18px] fill-icon">star</span>
                   </div>
+                  <span className="text-xs font-bold text-[#00003c]">{selectedProduct.rating} / 5.0</span>
+                  <span className="text-xs text-[#767684]">({selectedProduct.reviewsCount} verified reviews)</span>
                 </div>
 
-                <div className="text-2xl font-extrabold text-white">
-                  ${selectedProduct.price.toLocaleString()}
+                <div className="flex items-baseline gap-3 mb-6">
+                  <span className="font-price font-bold text-3xl text-[#00003c]">
+                    ₦{selectedProduct.price.toLocaleString()}
+                  </span>
                   {selectedProduct.originalPrice && (
-                    <span className="text-sm text-zinc-500 line-through ml-2 font-medium">
-                      ${selectedProduct.originalPrice.toLocaleString()}
+                    <span className="text-base text-[#767684] line-through">
+                      ₦{selectedProduct.originalPrice.toLocaleString()}
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs text-zinc-300 leading-relaxed">
-                  {selectedProduct.description}
-                </p>
+                <div className="space-y-4 text-xs text-[#464653] border-t border-[#ebe7e7] pt-4">
+                  <p className="leading-relaxed">{selectedProduct.description}</p>
 
-                {/* Specs */}
-                {selectedProduct.specs && Object.keys(selectedProduct.specs).length > 0 && (
-                  <div className="space-y-2 pt-2 border-t border-zinc-900">
-                    <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Specifications</div>
-                    <div className="grid grid-cols-1 gap-1.5 text-xs">
-                      {Object.entries(selectedProduct.specs).map(([k, v]) => (
-                        <div key={k} className="flex justify-between py-1 border-b border-zinc-900/60">
-                          <span className="text-zinc-500 font-medium">{k}:</span>
-                          <span className="text-zinc-200 font-semibold text-right">{v}</span>
-                        </div>
-                      ))}
+                  {selectedProduct.features && selectedProduct.features.length > 0 && (
+                    <div>
+                      <h4 className="font-bold text-[#00003c] mb-1.5 uppercase tracking-wider text-[11px]">Key Highlights:</h4>
+                      <ul className="grid grid-cols-1 gap-1 pl-4 list-disc">
+                        {selectedProduct.features.map((f, i) => (
+                          <li key={i} className="text-[#1c1b1b] font-medium">{f}</li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <div className="pt-4 flex gap-3">
-                  <button
-                    onClick={() => {
-                      addToCart(selectedProduct);
-                      setSelectedProduct(null);
-                    }}
-                    className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-extrabold text-sm hover:brightness-110 shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2"
-                  >
-                    <ShoppingBag size={18} />
-                    <span>Add To Bag</span>
-                  </button>
+                  {selectedProduct.specs && Object.keys(selectedProduct.specs).length > 0 && (
+                    <div>
+                      <h4 className="font-bold text-[#00003c] mb-1.5 uppercase tracking-wider text-[11px]">Technical Specifications:</h4>
+                      <div className="grid grid-cols-2 gap-2 bg-[#f0edec] p-3 rounded-lg">
+                        {Object.entries(selectedProduct.specs).map(([k, v]) => (
+                          <div key={k}>
+                            <span className="text-[#767684] block">{k}:</span>
+                            <span className="font-semibold text-[#00003c] block">{v}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </div>
+
+              <div className="pt-4 border-t border-[#ebe7e7] flex gap-3">
+                <button
+                  onClick={() => {
+                    addToCart(selectedProduct);
+                    setSelectedProduct(null);
+                  }}
+                  className="flex-1 bg-[#00003c] hover:bg-[#000080] text-white font-headline font-bold py-3.5 rounded-xl transition-all active:scale-95 shadow-md flex items-center justify-center gap-2 text-sm"
+                >
+                  <span className="material-symbols-outlined">add_shopping_cart</span>
+                  Add to Cart
+                </button>
+                <button
+                  onClick={() => toggleWishlist(selectedProduct.id)}
+                  className="px-4 border border-[#c6c5d5] rounded-xl hover:border-[#00003c] flex items-center justify-center transition-colors"
+                  title="Save to Wishlist"
+                >
+                  <span className={`material-symbols-outlined ${wishlist[selectedProduct.id] ? 'fill-icon text-[#D32F2F]' : 'text-[#464653]'}`}>
+                    favorite
+                  </span>
+                </button>
               </div>
             </div>
           </div>
@@ -410,15 +604,6 @@ const StorefrontContent: React.FC = () => {
       )}
 
       <Footer />
-      <CartDrawer />
     </div>
-  );
-};
-
-export default function Home() {
-  return (
-    <CartProvider>
-      <StorefrontContent />
-    </CartProvider>
   );
 }

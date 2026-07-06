@@ -2,181 +2,193 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useCart } from '@/lib/CartContext';
-import { ShoppingBag, ShieldAlert, Search, Menu, X, Sparkles, Smartphone, Headphones, Laptop, Watch, Zap } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { useCart } from '@/context/CartContext';
 
 interface NavbarProps {
   onSearch?: (query: string) => void;
-  selectedCategory?: string;
   onSelectCategory?: (category: string) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onSearch, selectedCategory = 'All', onSelectCategory }) => {
+export default function Navbar({ onSearch, onSelectCategory }: NavbarProps) {
   const { totalItems, setIsCartOpen } = useCart();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const categories = [
-    { name: 'All', icon: Sparkles },
-    { name: 'Phones', icon: Smartphone },
-    { name: 'Audio', icon: Headphones },
-    { name: 'Laptops', icon: Laptop },
-    { name: 'Wearables', icon: Watch },
-    { name: 'Accessories', icon: Zap },
-  ];
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const pathname = usePathname();
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    if (onSearch) onSearch(e.target.value);
+    const val = e.target.value;
+    setSearchQuery(val);
+    if (onSearch) onSearch(val);
   };
 
-  const handleCategoryClick = (catName: string) => {
-    if (onSelectCategory) onSelectCategory(catName);
-    setIsMobileMenuOpen(false);
-  };
+  const isHome = pathname === '/';
 
   return (
-    <header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/80 text-white transition-all">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-xs font-semibold text-center py-1.5 px-4 tracking-wide">
-        ⚡ FLASH SALE: UP TO 30% OFF TITANIUM PHONES & PRO AUDIO • FREE EXPRESS DELIVERY WORLDWIDE ⚡
-      </div>
+    <>
+      {/* TopAppBar - Stitch Design System */}
+      <header className="fixed top-0 w-full z-50 bg-[#fcf9f8] border-b border-[#c6c5d5] flex justify-between items-center px-4 md:px-12 h-16 shadow-none transition-all duration-300">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => {
+              if (onSelectCategory && isHome) onSelectCategory('All');
+            }}
+            className="text-[#00003c] hover:opacity-80 active:scale-95 transition-all"
+            title="Menu / Reset"
+          >
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+          <Link href="/" className="flex items-center gap-2">
+            <img 
+              src="https://lh3.googleusercontent.com/aida/AP1WRLt9dUXw7EhLF1fIQDLhUefxkgX9lrFfWFPY7dhJCWcdw1cjVwp0ROgHvpATBq8iPnNM45lC0YgDHddTVNYNOMtgmSMzJQXahDx6s0hDuRJibH0oQ_39FWpv4USdqaaRd8jyKXmc1XG2pMSjQh2YjWFgyIORCf6z_4YgtMjNms85jfDWAonG9YquOuLiOULrYWiU4mQA9NY3p_h4ZyZ4ZbIN3h9WFz206e7ksRwxJA3RcJ828781k5BM0f8" 
+              alt="FLEEKTECH" 
+              className="h-8 w-auto object-contain" 
+            />
+          </Link>
+        </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-              className="md:hidden p-2 text-zinc-400 hover:text-white rounded-lg focus:outline-none"
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center font-extrabold text-xl text-black shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-                FT
-              </div>
-              <span className="font-extrabold text-xl sm:text-2xl tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
-                FLEEK<span className="text-cyan-400">TECH</span>
+        {/* Desktop Search Bar */}
+        <div className="flex-1 mx-8 hidden md:block max-w-xl">
+          <div className="relative w-full">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#767684]">search</span>
+            <input 
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="Search for phones, laptops, audio..." 
+              className="w-full bg-[#f6f3f2] border border-[#c6c5d5] rounded-lg py-2 pl-10 pr-4 focus:ring-2 focus:ring-[#00003c] focus:border-transparent text-sm text-[#1c1b1b] placeholder-[#767684] outline-none transition-all"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => { setSearchQuery(''); if (onSearch) onSearch(''); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#767684] hover:text-[#1c1b1b]"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setShowMobileSearch(!showMobileSearch)}
+            className="md:hidden active:scale-95 transition-transform text-[#00003c] p-1"
+            title="Search"
+          >
+            <span className="material-symbols-outlined">search</span>
+          </button>
+
+          <Link 
+            href="/admin" 
+            className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#c6c5d5] bg-white text-[#00003c] font-semibold text-xs hover:border-[#00003c] transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+            Admin Portal
+          </Link>
+
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            className="relative active:scale-95 transition-transform text-[#00003c] flex items-center p-1"
+            title="View Cart"
+          >
+            <span className="material-symbols-outlined">shopping_cart</span>
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[#ffa504] text-[10px] font-bold text-[#684100] rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
+                {totalItems}
               </span>
-            </Link>
-          </div>
+            )}
+          </button>
+        </div>
+      </header>
 
-          {/* Search Bar (Desktop & Tablet) */}
-          <div className="hidden sm:flex flex-1 max-w-md relative">
-            <input
+      {/* Mobile Search Dropdown */}
+      {showMobileSearch && (
+        <div className="fixed top-16 left-0 w-full bg-[#fcf9f8] border-b border-[#c6c5d5] p-3 z-40 md:hidden animate-in slide-in-from-top-2">
+          <div className="relative w-full">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#767684]">search</span>
+            <input 
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Search cyberpunk laptops, titanium phones, ANC audio..."
-              className="w-full bg-zinc-900/90 border border-zinc-700/80 rounded-full py-2 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+              placeholder="Search phones, laptops..." 
+              className="w-full bg-[#f6f3f2] border border-[#c6c5d5] rounded-lg py-2 pl-10 pr-10 text-sm text-[#1c1b1b] outline-none"
+              autoFocus
             />
-            <Search className="absolute left-3.5 top-2.5 text-zinc-500" size={18} />
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 sm:gap-4">
-            {/* Admin Dashboard Link */}
-            <Link
-              href="/admin"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/60 text-xs sm:text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition-all shadow-sm"
+            <button 
+              onClick={() => setShowMobileSearch(false)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#767684]"
             >
-              <ShieldAlert size={16} className="text-cyan-400 animate-pulse" />
-              <span className="hidden sm:inline">Admin Portal</span>
-              <span className="sm:hidden">Admin</span>
-            </Link>
-
-            {/* Cart Button */}
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="relative p-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-bold hover:brightness-110 transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center"
-              aria-label="Open Cart"
-            >
-              <ShoppingBag size={20} className="text-zinc-950" />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-white text-black font-extrabold text-[11px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-zinc-950 animate-bounce">
-                  {totalItems}
-                </span>
-              )}
+              <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
-          </div>
-        </div>
-
-        {/* Mobile Search Bar */}
-        <div className="sm:hidden pb-3">
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              placeholder="Search tech products..."
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-full py-2 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500"
-            />
-            <Search className="absolute left-3.5 top-2.5 text-zinc-500" size={18} />
-          </div>
-        </div>
-
-        {/* Category Navigation Bar (Desktop) */}
-        {onSelectCategory && (
-          <nav className="hidden md:flex items-center justify-center gap-2 py-2.5 border-t border-zinc-900 text-sm font-medium overflow-x-auto">
-            {categories.map((cat) => {
-              const Icon = cat.icon;
-              const isSelected = selectedCategory === cat.name;
-              return (
-                <button
-                  key={cat.name}
-                  onClick={() => handleCategoryClick(cat.name)}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-all whitespace-nowrap ${
-                    isSelected
-                      ? 'bg-cyan-500 text-black font-bold shadow-md shadow-cyan-500/20'
-                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
-                  }`}
-                >
-                  <Icon size={16} />
-                  <span>{cat.name}</span>
-                </button>
-              );
-            })}
-          </nav>
-        )}
-      </div>
-
-      {/* Mobile Navigation Drawer */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden bg-zinc-950 border-b border-zinc-800 px-4 pt-2 pb-6 space-y-3 animate-fadeIn">
-          <div className="font-semibold text-xs text-zinc-500 uppercase tracking-wider px-2">Categories</div>
-          <div className="grid grid-cols-2 gap-2">
-            {categories.map((cat) => {
-              const Icon = cat.icon;
-              const isSelected = selectedCategory === cat.name;
-              return (
-                <button
-                  key={cat.name}
-                  onClick={() => handleCategoryClick(cat.name)}
-                  className={`flex items-center gap-2 p-3 rounded-xl text-left font-medium transition-all ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-bold'
-                      : 'bg-zinc-900/80 text-zinc-300 hover:bg-zinc-800'
-                  }`}
-                >
-                  <Icon size={18} />
-                  <span>{cat.name}</span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="pt-2 border-t border-zinc-900">
-            <Link
-              href="/admin"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 w-full py-3 bg-zinc-900 hover:bg-zinc-800 rounded-xl text-cyan-400 font-bold text-sm"
-            >
-              <ShieldAlert size={18} />
-              <span>Go to Admin Portal</span>
-            </Link>
           </div>
         </div>
       )}
-    </header>
+
+      {/* Desktop Side Hint Nav - Stitch Design System */}
+      <div className="hidden md:block fixed left-0 top-16 h-full w-16 bg-[#fcf9f8] border-r border-[#c6c5d5] z-40">
+        <div className="flex flex-col items-center py-8 gap-8">
+          <Link href="/" className={`${isHome ? 'text-[#855400]' : 'text-[#464653] hover:text-[#00003c]'} transition-colors`} title="Home">
+            <span className={`material-symbols-outlined text-2xl ${isHome ? 'fill-icon' : ''}`}>home</span>
+          </Link>
+          <button 
+            onClick={() => { if (onSelectCategory && isHome) onSelectCategory('Phones'); }}
+            className="text-[#464653] hover:text-[#00003c] transition-colors" 
+            title="Phones"
+          >
+            <span className="material-symbols-outlined text-2xl">smartphone</span>
+          </button>
+          <button 
+            onClick={() => { if (onSelectCategory && isHome) onSelectCategory('Laptops'); }}
+            className="text-[#464653] hover:text-[#00003c] transition-colors" 
+            title="Laptops"
+          >
+            <span className="material-symbols-outlined text-2xl">laptop</span>
+          </button>
+          <button 
+            onClick={() => { if (onSelectCategory && isHome) onSelectCategory('Audio'); }}
+            className="text-[#464653] hover:text-[#00003c] transition-colors" 
+            title="Audio"
+          >
+            <span className="material-symbols-outlined text-2xl">headphones</span>
+          </button>
+          <Link href="/admin" className={`${pathname === '/admin' ? 'text-[#855400]' : 'text-[#464653] hover:text-[#00003c]'} transition-colors mt-auto mb-12`} title="Admin Portal">
+            <span className={`material-symbols-outlined text-2xl ${pathname === '/admin' ? 'fill-icon' : ''}`}>admin_panel_settings</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* BottomNavBar (Mobile) - Stitch Design System */}
+      <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 rounded-t-xl bg-[#fcf9f8]/95 backdrop-blur-md border-t border-[#c6c5d5] shadow-lg flex justify-around items-center h-16 px-4 pb-safe">
+        <Link href="/" className={`flex flex-col items-center justify-center ${isHome ? 'text-[#855400] font-bold' : 'text-[#464653]'} active:scale-90 transition-transform`}>
+          <span className={`material-symbols-outlined ${isHome ? 'fill-icon' : ''}`}>home</span>
+          <span className="font-label text-[11px]">Home</span>
+        </Link>
+        <button 
+          onClick={() => {
+            if (isHome && onSelectCategory) onSelectCategory('Phones');
+          }}
+          className="flex flex-col items-center justify-center text-[#464653] active:scale-90 transition-transform"
+        >
+          <span className="material-symbols-outlined">category</span>
+          <span className="font-label text-[11px]">Categories</span>
+        </button>
+        <button 
+          onClick={() => setIsCartOpen(true)}
+          className="flex flex-col items-center justify-center text-[#464653] active:scale-90 transition-transform relative"
+        >
+          <span className="material-symbols-outlined">shopping_cart</span>
+          <span className="font-label text-[11px]">Cart</span>
+          {totalItems > 0 && (
+            <span className="absolute top-0 right-4 bg-[#ffa504] text-[9px] font-bold text-[#684100] rounded-full w-3.5 h-3.5 flex items-center justify-center">
+              {totalItems}
+            </span>
+          )}
+        </button>
+        <Link href="/admin" className={`flex flex-col items-center justify-center ${pathname === '/admin' ? 'text-[#855400] font-bold' : 'text-[#464653]'} active:scale-90 transition-transform`}>
+          <span className={`material-symbols-outlined ${pathname === '/admin' ? 'fill-icon' : ''}`}>admin_panel_settings</span>
+          <span className="font-label text-[11px]">Admin</span>
+        </Link>
+      </nav>
+    </>
   );
-};
+}
