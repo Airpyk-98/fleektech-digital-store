@@ -63,7 +63,8 @@ export default function Home() {
       const res = await fetch('/api/products');
       if (res.ok) {
         const data = await res.json();
-        setProducts(data);
+        const items = data.products || (Array.isArray(data) ? data : []);
+        setProducts(items);
       }
     } catch (err) {
       console.error('Error fetching products:', err);

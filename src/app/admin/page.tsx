@@ -44,7 +44,8 @@ export default function AdminPage() {
       const res = await fetch('/api/products?all=true');
       if (res.ok) {
         const data = await res.json();
-        setProducts(data);
+        const items = data.products || (Array.isArray(data) ? data : []);
+        setProducts(items);
       }
     } catch (err) {
       console.error('Error fetching admin products:', err);
@@ -63,7 +64,8 @@ export default function AdminPage() {
         body: JSON.stringify({ isListed: updatedStatus }),
       });
       if (res.ok) {
-        const updated = await res.json();
+        const data = await res.json();
+        const updated = data.product || data;
         setProducts(products.map((p) => (p.id === product.id ? updated : p)));
         showStatus(`Product "${product.name}" is now ${updatedStatus ? 'LISTED (Visible)' : 'DELISTED (Hidden)'}.`);
       } else {
@@ -167,7 +169,8 @@ export default function AdminPage() {
           body: JSON.stringify(payload),
         });
         if (res.ok) {
-          const created = await res.json();
+          const data = await res.json();
+          const created = data.product || data;
           setProducts([created, ...products]);
           showStatus(`Product "${created.name}" created successfully!`);
           setIsCreating(false);
@@ -181,7 +184,8 @@ export default function AdminPage() {
           body: JSON.stringify(payload),
         });
         if (res.ok) {
-          const updated = await res.json();
+          const data = await res.json();
+          const updated = data.product || data;
           setProducts(products.map((p) => (p.id === editingProduct.id ? updated : p)));
           showStatus(`Product "${updated.name}" updated successfully!`);
           setEditingProduct(null);
